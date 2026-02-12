@@ -43,14 +43,13 @@
         .table-custom td { font-size: 0.85rem; vertical-align: middle; }
         .calc-input:focus { border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
 
-        /* PRINT STYLES - Hides app, shows only table */
+        /* PRINT STYLES */
         #print-area { display: none; }
         @media print {
             body * { visibility: hidden; }
             #print-area, #print-area * { visibility: visible; }
             #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
             
-            /* Official Table Look */
             .print-header { text-align: center; margin-bottom: 20px; font-family: "Times New Roman", serif; }
             .print-header h4 { margin: 0; font-weight: bold; font-size: 16px; }
             .print-header h5 { margin: 0; font-size: 14px; }
@@ -61,7 +60,6 @@
             .table-print td { vertical-align: middle; }
             .text-center { text-align: center; }
             
-            /* Footer Signatories */
             .print-footer { margin-top: 40px; width: 100%; font-family: Arial, sans-serif; }
             .signatory-box { display: inline-block; width: 45%; vertical-align: top; text-align: center; }
             .signatory-line { border-bottom: 1px solid black; width: 80%; margin: 30px auto 5px auto; }
@@ -251,16 +249,16 @@
                         <div class="p-2 bg-light border rounded text-center">
                             <h6 class="text-danger fw-bold small">TARDINESS</h6>
                             <input type="number" id="inpTardyDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpTardyMins" class="form-control mb-1" placeholder="Mins">
-                            <input type="number" id="inpTardyConv" class="form-control calc-input" placeholder="Conv">
+                            <input type="number" id="inpTardyMins" class="form-control mb-1 calc-input" placeholder="Minutes">
+                            <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">
                         <div class="p-2 bg-light border rounded text-center">
                             <h6 class="text-warning text-dark fw-bold small">UNDERTIME</h6>
                             <input type="number" id="inpUnderDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpUnderMins" class="form-control mb-1" placeholder="Mins">
-                            <input type="number" id="inpUnderConv" class="form-control calc-input" placeholder="Conv">
+                            <input type="number" id="inpUnderMins" class="form-control mb-1 calc-input" placeholder="Minutes">
+                            <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv" readonly>
                         </div>
                     </div>
                     <div class="col-md-4">
@@ -486,7 +484,6 @@
             snap.forEach(d => {
                 count++;
                 const data = d.data();
-                // FIX: Corrected variable name below
                 const dateSavedStr = data.savedAt ? data.savedAt.toDate().toLocaleString() : 'N/A';
                 tbody.innerHTML += `
                     <tr>
@@ -516,12 +513,10 @@
     // ACTION: Delete
     window.deleteReport = async (m) => {
         if(!confirm("Delete this report and all its data?")) return;
-        // Delete records
         const q = query(reportsCol, where("month", "==", m));
         const snap = await getDocs(q);
         const batch = writeBatch(db);
         snap.forEach(doc => batch.delete(doc.ref));
-        // Delete metadata
         batch.delete(doc(savedReportsCol, m));
         await batch.commit();
         alert("Deleted.");
@@ -601,14 +596,27 @@
         XLSX.writeFile(wb, `${title}.xlsx`);
     };
 
-    // --- 5. EDIT MODAL LOGIC (With Auto Calc) ---
+    // --- 5. AUTO-CALCULATION LOGIC ---
     function recalc() {
-        const td = parseFloat(document.getElementById('inpTardyDays').value)||0;
-        const tc = parseFloat(document.getElementById('inpTardyConv').value)||0;
-        const ud = parseFloat(document.getElementById('inpUnderDays').value)||0;
-        const uc = parseFloat(document.getElementById('inpUnderConv').value)||0;
-        document.getElementById('inpTotalDays').value = td + ud;
-        document.getElementById('inpTotalConv').value = (tc + uc).toFixed(3);
+        // 1. Get Minutes
+        const tMins = parseFloat(document.getElementById('inpTardyMins').value) || 0;
+        const uMins = parseFloat(document.getElementById('inpUnderMins').value) || 0;
+
+        // 2. Calculate Conversions (Mins / 60 / 8) -> (Mins / 480)
+        const tConv = tMins / 480;
+        const uConv = uMins / 480;
+
+        // 3. Update Conversion Fields (show value if > 0)
+        document.getElementById('inpTardyConv').value = tConv > 0 ? tConv.toFixed(3) : '';
+        document.getElementById('inpUnderConv').value = uConv > 0 ? uConv.toFixed(3) : '';
+
+        // 4. Get Days (Manual Input)
+        const tDays = parseFloat(document.getElementById('inpTardyDays').value) || 0;
+        const uDays = parseFloat(document.getElementById('inpUnderDays').value) || 0;
+
+        // 5. Update Grand Totals
+        document.getElementById('inpTotalDays').value = tDays + uDays;
+        document.getElementById('inpTotalConv').value = (tConv + uConv).toFixed(3);
     }
 
     window.editRec = (id) => {
@@ -617,11 +625,15 @@
         document.getElementById('editId').value = r.id;
         document.getElementById('editNameDisplay').innerText = r.name;
         document.getElementById('inpRemarks').value = r.remarks||'';
+        
+        // Fill basic fields
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              document.getElementById(`inp${k}`).value = r[k.charAt(0).toLowerCase()+k.slice(1)]||'';
         });
         
-        const inputs = ['inpTardyDays','inpTardyConv','inpUnderDays','inpUnderConv'];
+        // Listeners for calculation
+        // Inputs that trigger recalculation: TardyDays, TardyMins, UnderDays, UnderMins
+        const inputs = ['inpTardyDays','inpTardyMins','inpUnderDays','inpUnderMins'];
         inputs.forEach(i => {
             const el = document.getElementById(i);
             el.removeEventListener('input', recalc);
