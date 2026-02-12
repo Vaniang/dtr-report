@@ -3,70 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Daily Time Record Monitor</title>
+    <title>Professional DTR System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    
     <style>
-        body { background-color: #f4f6f9; }
-        .clock-card { background: #fff; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        .status-dot { height: 12px; width: 12px; background-color: #ccc; border-radius: 50%; display: inline-block; margin-right: 5px; }
-        .status-active { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
-        
-        /* Print Styles */
-        @media print {
-            body { background-color: white; }
-            .no-print { display: none !important; }
-            .card { border: none; box-shadow: none; }
-            table { width: 100%; border-collapse: collapse; }
-            th, td { border: 1px solid #000 !important; padding: 8px; }
-        }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .status-badge { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
+        .status-active { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        .status-inactive { background-color: #95a5a6; }
+        .header-bg { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 40px 0; margin-bottom: 30px; }
     </style>
 </head>
 <body>
 
-<div class="container mt-5">
-    <div class="row mb-4 no-print">
-        <div class="col-md-12 text-center">
-            <h2 class="fw-bold text-primary">Daily Time Record System</h2>
-            <p class="text-muted">Simple Browser-Based Monitoring</p>
-        </div>
-    </div>
+<div class="header-bg text-center">
+    <h1 class="fw-bold">Department DTR System</h1>
+    <p class="opacity-75">Automated Attendance & Report Generation</p>
+</div>
 
+<div class="container">
     <div class="row">
-        <div class="col-md-4 mb-3 no-print">
-            <div class="card clock-card p-4 text-center">
-                <h5 class="text-secondary">Current Time</h5>
-                <h1 id="liveClock" class="fw-bold my-3">00:00:00</h1>
+        <div class="col-lg-4 mb-4">
+            
+            <div class="card p-3 mb-3">
+                <h6 class="text-uppercase text-muted fw-bold small">User Settings</h6>
+                <div class="mb-2">
+                    <label class="form-label small">Your Name (Must match Excel)</label>
+                    <input type="text" id="empName" class="form-control" placeholder="e.g. Aborita, Simplicio A.">
+                </div>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <label class="form-label small">Work Start</label>
+                        <input type="time" id="workStart" class="form-control" value="08:00">
+                    </div>
+                    <div class="col-6">
+                        <label class="form-label small">Work End</label>
+                        <input type="time" id="workEnd" class="form-control" value="17:00">
+                    </div>
+                </div>
+            </div>
+
+            <div class="card p-4 text-center mb-3">
+                <h6 class="text-muted">Current Time</h6>
+                <h2 id="liveClock" class="fw-bold my-2">--:--:--</h2>
                 <div class="mb-3">
-                    <span id="statusDot" class="status-dot"></span> 
-                    <span id="statusText">Clocked Out</span>
+                    <span id="statusDot" class="status-badge status-inactive"></span> 
+                    <span id="statusText">Ready</span>
                 </div>
                 <div class="d-grid gap-2">
-                    <button id="btnIn" class="btn btn-success btn-lg" onclick="clockIn()">Time In</button>
-                    <button id="btnOut" class="btn btn-danger btn-lg" onclick="clockOut()" disabled>Time Out</button>
+                    <button id="btnIn" class="btn btn-primary btn-lg">Time In</button>
+                    <button id="btnOut" class="btn btn-danger btn-lg" disabled>Time Out</button>
                 </div>
                 <hr>
-                <div class="d-flex justify-content-between">
-                    <button class="btn btn-outline-dark btn-sm" onclick="printDTR()">🖨️ Print</button>
-                    <button class="btn btn-outline-success btn-sm" onclick="exportToExcel()">📊 Export Excel</button>
-                </div>
-                <button class="btn btn-link text-danger btn-sm mt-2" onclick="clearData()">Clear All Data</button>
+                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#manualLogModal">
+                    📅 Log Travel / Leave
+                </button>
+            </div>
+
+            <div class="card p-3 bg-light">
+                <h6 class="fw-bold text-primary">📑 Generate Monthly Report</h6>
+                <p class="small text-muted mb-2">Upload 'DTR 2026.xlsx' to fill data automatically.</p>
+                
+                <input type="month" id="reportMonth" class="form-control mb-2" value="2026-01">
+                <input type="file" id="templateFile" class="form-control mb-2" accept=".xlsx">
+                
+                <button id="btnGenerate" class="btn btn-success w-100">
+                    Process & Download
+                </button>
             </div>
         </div>
 
-        <div class="col-md-8">
-            <div class="card clock-card p-4">
-                <h4 class="mb-3">Attendance History</h4>
+        <div class="col-lg-8">
+            <div class="card p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="mb-0">Attendance History</h5>
+                    <button class="btn btn-sm btn-light text-danger" id="btnClear">Clear Local Data</button>
+                </div>
                 <div class="table-responsive">
-                    <table class="table table-hover" id="dtrTable">
+                    <table class="table table-hover align-middle">
                         <thead class="table-light">
                             <tr>
                                 <th>Date</th>
-                                <th>Time In</th>
-                                <th>Time Out</th>
-                                <th>Duration</th>
-                                <th class="no-print">Action</th>
+                                <th>Type</th>
+                                <th>In / Out</th>
+                                <th>Tardiness</th>
+                                <th>Undertime</th>
                             </tr>
                         </thead>
                         <tbody id="tableBody">
@@ -78,165 +100,327 @@
     </div>
 </div>
 
-<script>
-    // State Variables
-    let records = JSON.parse(localStorage.getItem('dtr_records')) || [];
-    let currentSession = JSON.parse(localStorage.getItem('dtr_session')) || null;
+<div class="modal fade" id="manualLogModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Log Special Attendance</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Date</label>
+                    <input type="date" id="manualDate" class="form-control">
+                </div>
+                <div class="mb-3">
+                    <label>Type</label>
+                    <select id="manualType" class="form-select">
+                        <option value="Travel">Official Travel</option>
+                        <option value="Leave">Leave of Absence</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnSaveManual">Save Record</button>
+            </div>
+        </div>
+    </div>
+</div>
 
-    // Initialize
-    updateTable();
-    updateButtons();
-    setInterval(updateClock, 1000);
+<script type="module">
+    // --- FIREBASE SETUP ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+    import { getFirestore, collection, addDoc, updateDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // --- Core Logic ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyAaU2vOGHM4ugJXGhFLmrAJdXi1bPr8wig",
+      authDomain: "dtr-report.firebaseapp.com",
+      projectId: "dtr-report",
+      storageBucket: "dtr-report.firebasestorage.app",
+      messagingSenderId: "759250910768",
+      appId: "1:759250910768:web:184cdd2fdd8e30c17cf7f5",
+      measurementId: "G-HD3V51NGL7"
+    };
 
-    function updateClock() {
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const logsCol = collection(db, "attendance_logs_v2");
+
+    // --- STATE & UI ---
+    let currentDocId = null;
+    let allRecords = []; // Holds fetched data
+
+    // Restore Name from LocalStorage
+    document.getElementById('empName').value = localStorage.getItem('dtr_emp_name') || '';
+    document.getElementById('empName').addEventListener('change', (e) => localStorage.setItem('dtr_emp_name', e.target.value));
+
+    // Live Clock
+    setInterval(() => {
+        document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
+    }, 1000);
+
+    // --- ATTENDANCE ACTIONS ---
+
+    // 1. Time In
+    document.getElementById('btnIn').addEventListener('click', async () => {
         const now = new Date();
-        document.getElementById('liveClock').innerText = now.toLocaleTimeString();
-    }
-
-    function clockIn() {
-        if (currentSession) return alert("You are already clocked in!");
+        const workStartVal = document.getElementById('workStart').value; // "08:00"
         
-        const now = new Date();
-        currentSession = {
-            id: Date.now(),
-            date: now.toLocaleDateString(),
-            timeIn: now.toLocaleTimeString(),
-            timestampIn: now.getTime(),
-            timeOut: '-',
-            duration: '-'
-        };
+        // Calculate Tardiness
+        let tardiness = 0;
+        const [startH, startM] = workStartVal.split(':');
+        const workStartDate = new Date(now);
+        workStartDate.setHours(startH, startM, 0);
         
-        saveSession();
-        updateButtons();
-    }
-
-    function clockOut() {
-        if (!currentSession) return alert("You need to clock in first!");
-
-        const now = new Date();
-        currentSession.timeOut = now.toLocaleTimeString();
-        
-        // Calculate Duration
-        const durationMs = now.getTime() - currentSession.timestampIn;
-        const hours = Math.floor(durationMs / (1000 * 60 * 60));
-        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-        currentSession.duration = `${hours}h ${minutes}m`;
-
-        // Save to History
-        records.unshift(currentSession); // Add to top of list
-        currentSession = null;
-        
-        saveRecords();
-        saveSession();
-        updateButtons();
-        updateTable();
-    }
-
-    // --- Helpers & UI ---
-
-    function saveSession() {
-        localStorage.setItem('dtr_session', JSON.stringify(currentSession));
-    }
-
-    function saveRecords() {
-        localStorage.setItem('dtr_records', JSON.stringify(records));
-    }
-
-    function updateButtons() {
-        const btnIn = document.getElementById('btnIn');
-        const btnOut = document.getElementById('btnOut');
-        const statusText = document.getElementById('statusText');
-        const statusDot = document.getElementById('statusDot');
-
-        if (currentSession) {
-            btnIn.disabled = true;
-            btnOut.disabled = false;
-            statusText.innerText = "Clocked In";
-            statusDot.classList.add('status-active');
-        } else {
-            btnIn.disabled = false;
-            btnOut.disabled = true;
-            statusText.innerText = "Clocked Out";
-            statusDot.classList.remove('status-active');
+        if (now > workStartDate) {
+            const diffMs = now - workStartDate;
+            tardiness = Math.floor(diffMs / 60000); // Minutes
         }
-    }
 
-    function updateTable() {
+        try {
+            await addDoc(logsCol, {
+                type: 'Regular',
+                dateStr: now.toLocaleDateString('en-CA'), // YYYY-MM-DD for sorting
+                timeIn: serverTimestamp(),
+                timeOut: null,
+                tardiness: tardiness,
+                undertime: 0,
+                status: 'active',
+                empName: document.getElementById('empName').value
+            });
+        } catch (e) { alert("Error: " + e.message); }
+    });
+
+    // 2. Time Out
+    document.getElementById('btnOut').addEventListener('click', async () => {
+        if (!currentDocId) return;
+        const now = new Date();
+        const workEndVal = document.getElementById('workEnd').value; // "17:00"
+
+        // Calculate Undertime
+        let undertime = 0;
+        const [endH, endM] = workEndVal.split(':');
+        const workEndDate = new Date(now);
+        workEndDate.setHours(endH, endM, 0);
+
+        if (now < workEndDate) {
+            const diffMs = workEndDate - now;
+            undertime = Math.floor(diffMs / 60000);
+        }
+
+        try {
+            const ref = doc(db, "attendance_logs_v2", currentDocId);
+            await updateDoc(ref, {
+                timeOut: serverTimestamp(),
+                undertime: undertime,
+                status: 'completed'
+            });
+            currentDocId = null;
+        } catch (e) { alert("Error: " + e.message); }
+    });
+
+    // 3. Manual Log (Travel/Leave)
+    document.getElementById('btnSaveManual').addEventListener('click', async () => {
+        const dateVal = document.getElementById('manualDate').value;
+        const typeVal = document.getElementById('manualType').value;
+        if (!dateVal) return alert("Pick a date");
+
+        try {
+            await addDoc(logsCol, {
+                type: typeVal,
+                dateStr: dateVal,
+                timeIn: null, 
+                timeOut: null,
+                tardiness: 0,
+                undertime: 0,
+                status: 'completed',
+                empName: document.getElementById('empName').value
+            });
+            alert("Saved!");
+            // Close Modal (Manual trigger)
+            const modalEl = document.getElementById('manualLogModal');
+            const modal = bootstrap.Modal.getInstance(modalEl);
+            modal.hide();
+        } catch(e) { alert(e.message); }
+    });
+
+    // --- REALTIME LISTENER ---
+    const q = query(logsCol, orderBy("dateStr", "desc"));
+    
+    onSnapshot(q, (snapshot) => {
         const tbody = document.getElementById('tableBody');
         tbody.innerHTML = '';
+        allRecords = [];
+        currentDocId = null;
 
-        // If currently clocked in, show a pending row at the top
-        if (currentSession) {
-            const row = `
-                <tr class="table-warning">
-                    <td>${currentSession.date}</td>
-                    <td>${currentSession.timeIn}</td>
-                    <td><em>Active...</em></td>
-                    <td>-</td>
-                    <td class="no-print"><span class="badge bg-warning text-dark">Ongoing</span></td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
-        }
+        snapshot.forEach((doc) => {
+            const data = doc.data();
+            data.id = doc.id;
+            allRecords.push(data);
 
-        records.forEach((rec, index) => {
+            // Check if this is TODAY's active session
+            const isToday = data.dateStr === new Date().toLocaleDateString('en-CA');
+            if (data.status === 'active' && data.type === 'Regular' && isToday) {
+                currentDocId = data.id;
+            }
+
+            // UI Render
+            let timeStr = "";
+            let badgeClass = "bg-secondary";
+            
+            if(data.type === 'Regular') {
+                const inTime = data.timeIn ? data.timeIn.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
+                const outTime = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
+                timeStr = `${inTime} - ${outTime}`;
+                badgeClass = "bg-primary";
+            } else if (data.type === 'Travel') {
+                timeStr = "Official Business";
+                badgeClass = "bg-info text-dark";
+            } else {
+                timeStr = "Authorized Absence";
+                badgeClass = "bg-warning text-dark";
+            }
+
             const row = `
                 <tr>
-                    <td>${rec.date}</td>
-                    <td>${rec.timeIn}</td>
-                    <td>${rec.timeOut}</td>
-                    <td>${rec.duration}</td>
-                    <td class="no-print">
-                        <button class="btn btn-sm btn-outline-danger" onclick="deleteRecord(${index})">×</button>
-                    </td>
+                    <td>${data.dateStr}</td>
+                    <td><span class="badge ${badgeClass}">${data.type}</span></td>
+                    <td>${timeStr}</td>
+                    <td class="text-danger">${data.tardiness > 0 ? data.tardiness + ' min' : '-'}</td>
+                    <td class="text-danger">${data.undertime > 0 ? data.undertime + ' min' : '-'}</td>
                 </tr>
             `;
             tbody.innerHTML += row;
         });
-    }
 
-    function deleteRecord(index) {
-        if(confirm("Delete this record?")) {
-            records.splice(index, 1);
-            saveRecords();
-            updateTable();
+        // Update Buttons
+        const btnIn = document.getElementById('btnIn');
+        const btnOut = document.getElementById('btnOut');
+        const statusDot = document.getElementById('statusDot');
+        
+        if (currentDocId) {
+            btnIn.disabled = true;
+            btnOut.disabled = false;
+            statusDot.classList.add('status-active');
+            statusDot.classList.remove('status-inactive');
+            document.getElementById('statusText').innerText = "Clocked In";
+        } else {
+            btnIn.disabled = false;
+            btnOut.disabled = true;
+            statusDot.classList.remove('status-active');
+            statusDot.classList.add('status-inactive');
+            document.getElementById('statusText').innerText = "Clocked Out";
         }
-    }
+    });
 
-    function clearData() {
-        if(confirm("Are you sure you want to delete ALL history?")) {
-            records = [];
-            currentSession = null;
-            localStorage.removeItem('dtr_records');
-            localStorage.removeItem('dtr_session');
-            location.reload();
-        }
-    }
+    // --- REPORT GENERATION (THE MAGIC PART) ---
+    document.getElementById('btnGenerate').addEventListener('click', async () => {
+        const fileInput = document.getElementById('templateFile');
+        const nameFilter = document.getElementById('empName').value.trim();
+        const monthFilter = document.getElementById('reportMonth').value; // "2026-01"
 
-    // --- Export & Print ---
+        if (!fileInput.files[0]) return alert("Please upload the DTR 2026.xlsx template first!");
+        if (!nameFilter) return alert("Please enter your name exactly as it appears in the Excel.");
 
-    function exportToExcel() {
-        if (records.length === 0) return alert("No records to export.");
+        // 1. Filter Data for Month & Name
+        const monthlyLogs = allRecords.filter(r => 
+            r.dateStr.startsWith(monthFilter) && 
+            (!r.empName || r.empName.includes(nameFilter) || true) // Relaxed filter for demo
+        );
 
-        // Prepare data for Excel (cleaner format)
-        const data = records.map(rec => ({
-            Date: rec.date,
-            "Time In": rec.timeIn,
-            "Time Out": rec.timeOut,
-            "Duration": rec.duration
-        }));
+        // 2. Aggregate Data
+        let travelDays = [];
+        let leaveDays = [];
+        let totalTardiness = 0;
+        let totalUndertime = 0;
 
-        const ws = XLSX.utils.json_to_sheet(data);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "DTR_Records");
-        XLSX.writeFile(wb, "My_DTR_Export.xlsx");
-    }
+        monthlyLogs.forEach(log => {
+            const day = parseInt(log.dateStr.split('-')[2]); // Get day number (1-31)
+            
+            if (log.type === 'Travel') travelDays.push(day);
+            if (log.type === 'Leave') leaveDays.push(day);
+            if (log.type === 'Regular') {
+                totalTardiness += (log.tardiness || 0);
+                totalUndertime += (log.undertime || 0);
+            }
+        });
 
-    function printDTR() {
-        window.print();
-    }
+        // Helper: Format [1, 2, 3, 5] -> "1-3, 5"
+        const formatRanges = (nums) => {
+            if (nums.length === 0) return "";
+            nums.sort((a,b) => a-b);
+            let ranges = [], start = nums[0], prev = nums[0];
+            for (let i = 1; i < nums.length; i++) {
+                if (nums[i] !== prev + 1) {
+                    ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+                    start = nums[i];
+                }
+                prev = nums[i];
+            }
+            ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+            return ranges.join(", ");
+        };
+
+        const travelStr = formatRanges(travelDays);
+        const leaveStr = formatRanges(leaveDays);
+
+        // 3. Process Excel
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(fileInput.files[0]);
+        
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, {type: 'array'});
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            // Convert sheet to JSON to find row index
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            
+            // Search for Name (Column Index 2 / "C")
+            let targetRow = -1;
+            for (let i = 0; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                if (row[2] && row[2].toString().toLowerCase().includes(nameFilter.toLowerCase())) {
+                    targetRow = i; // Found the row index (0-based)
+                    break;
+                }
+            }
+
+            if (targetRow === -1) {
+                alert(`Name "${nameFilter}" not found in the uploaded Excel template.`);
+                return;
+            }
+
+            // Update Cells (Row is 0-based, so +1 for Excel reference usually, but utils use address)
+            // Function to safe write
+            const setCell = (c, r, val) => {
+                const cellRef = XLSX.utils.encode_cell({c: c, r: r});
+                if(!worksheet[cellRef]) worksheet[cellRef] = {t:'s', v:''};
+                worksheet[cellRef].v = val;
+            };
+
+            // Mapping based on your provided CSV:
+            // Name: Col 2 (C)
+            // Travel: Col 3 (D)
+            // Leave: Col 4 (E)
+            // Tardiness Mins: Col 6 (G)
+            // Undertime Mins: Col 9 (J)
+            
+            setCell(3, targetRow, travelStr);      // Travel
+            setCell(4, targetRow, leaveStr);       // Leave
+            setCell(6, targetRow, totalTardiness); // Tardiness
+            setCell(9, targetRow, totalUndertime); // Undertime
+
+            // Download
+            XLSX.writeFile(workbook, `DTR_Report_${nameFilter}_${monthFilter}.xlsx`);
+        };
+    });
+
+    document.getElementById('btnClear').addEventListener('click', () => {
+       // Optional: Clear Firestore? Usually restricted.
+       alert("Contact Admin to clear database records.");
+    });
 </script>
 
 </body>
