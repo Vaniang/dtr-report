@@ -42,10 +42,22 @@
         .table-custom th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; text-align: center; }
         .table-custom td { font-size: 0.85rem; vertical-align: middle; }
         .calc-input:focus { border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
-        
-        /* Specific column widths to match Excel feel */
-        .col-num { width: 60px; text-align: center; }
         .col-name { min-width: 200px; }
+
+        /* Print Styles */
+        #print-area { display: none; }
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; }
+            .table-print { width: 100%; border-collapse: collapse; font-size: 12px; }
+            .table-print th, .table-print td { border: 1px solid black; padding: 4px; text-align: center; }
+            .table-print th { background-color: #f0f0f0; }
+            .table-print .text-left { text-align: left; }
+            .print-header { text-align: center; margin-bottom: 20px; }
+            .print-header h4, .print-header h5 { margin: 5px 0; }
+            @page { size: landscape; margin: 10mm; }
+        }
     </style>
 </head>
 <body>
@@ -124,6 +136,7 @@
                                         <th colspan="3" class="bg-light text-danger">TARDINESS</th>
                                         <th colspan="3" class="bg-light text-warning">UNDERTIME</th>
                                         <th colspan="2" class="bg-light text-success">GRAND TOTAL</th>
+                                        <th rowspan="2" class="bg-light" style="min-width:150px;">REMARKS</th>
                                         <th rowspan="2" class="bg-light">Action</th>
                                     </tr>
                                     <tr class="bg-light">
@@ -143,49 +156,35 @@
                     </div>
                 </div>
 
-                <div class="card bg-light border-0">
-                    <div class="card-body d-flex justify-content-between align-items-center">
-                        <div>
-                            <h6 class="fw-bold text-success mb-1">Generate Monthly Report</h6>
-                            <p class="small text-muted mb-0">Upload 'DTR 2026.xlsx' to fill data.</p>
-                        </div>
-                        <div class="d-flex gap-2">
-                            <input type="file" id="templateFile" class="form-control form-control-sm" accept=".xlsx">
-                            <button class="btn btn-success btn-sm" id="btnGenerate">Download Excel</button>
-                        </div>
-                    </div>
+                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    <button class="btn btn-success me-md-2" type="button" id="btnSaveReport">
+                        <i class="bi bi-save-fill me-1"></i> Save Final Report
+                    </button>
                 </div>
             </div>
 
             <div id="view-consolidation" class="d-none">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="text-secondary">Yearly Consolidated Report</h4>
-                    <div class="d-flex gap-2">
-                        <select id="consYear" class="form-select form-select-sm" style="width: 120px;">
-                            <option value="2026">2026</option>
-                            <option value="2027">2027</option>
-                        </select>
-                        <button class="btn btn-dark btn-sm" onclick="loadConsolidated()">Refresh</button>
-                        <button class="btn btn-success btn-sm" onclick="exportConsolidated()">Export Summary</button>
-                    </div>
+                    <h4 class="text-secondary">Saved Monthly Reports</h4>
+                    <button class="btn btn-dark btn-sm" onclick="loadSavedReports()">
+                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh List
+                    </button>
                 </div>
+                
                 <div class="card shadow-sm border-0">
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-striped table-hover table-sm mb-0 table-custom">
-                                <thead class="table-dark">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light">
                                     <tr>
-                                        <th class="col-name">NAME OF EMPLOYEE</th>
-                                        <th class="text-center">JAN</th>
-                                        <th class="text-center">FEB</th>
-                                        <th class="text-center">MAR</th>
-                                        <th class="text-center">APR</th>
-                                        <th class="text-center">MAY</th>
-                                        <th class="text-center bg-danger border-0">TOTAL LATE</th>
-                                        <th class="text-center bg-warning text-dark border-0">TOTAL UNDER</th>
+                                        <th>Report Name</th>
+                                        <th>Month</th>
+                                        <th>Date Saved</th>
+                                        <th class="text-end">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="consTableBody"></tbody>
+                                <tbody id="savedReportsBody">
+                                    </tbody>
                             </table>
                         </div>
                     </div>
@@ -294,6 +293,12 @@
                         </div>
                     </div>
                 </div>
+                
+                <div class="mt-3">
+                    <label class="form-label small fw-bold">Remarks</label>
+                    <textarea id="inpRemarks" class="form-control" rows="2" placeholder="Enter remarks here..."></textarea>
+                </div>
+
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
@@ -303,11 +308,59 @@
     </div>
 </div>
 
+<div id="print-area">
+    <div class="print-header">
+        <h4>DEPARTMENT OF EDUCATION</h4>
+        <h5>Region I</h5>
+        <h5>San Fernando City (La Union)</h5>
+        <h5 class="mt-4" id="print-title">Daily Time Record Report</h5>
+    </div>
+    <table class="table-print">
+        <thead>
+            <tr>
+                <th rowspan="2" class="text-left" style="width: 25%;">NAME OF EMPLOYEE</th>
+                <th rowspan="2" style="width: 10%;">TRAVEL</th>
+                <th rowspan="2" style="width: 10%;">LEAVE</th>
+                <th colspan="3">TARDINESS</th>
+                <th colspan="3">UNDERTIME</th>
+                <th colspan="2">GRAND TOTAL</th>
+                <th rowspan="2" style="width: 10%;">REMARKS</th>
+            </tr>
+            <tr>
+                <th>No. of Days</th>
+                <th>Minutes</th>
+                <th>Conversion</th>
+                <th>No. of Days</th>
+                <th>Minutes</th>
+                <th>Conversion</th>
+                <th>No. of Days</th>
+                <th>Conversion</th>
+            </tr>
+        </thead>
+        <tbody id="print-table-body">
+            </tbody>
+    </table>
+    <div class="mt-5" style="break-inside: avoid;">
+        <div style="float: left; width: 45%;">
+            <p>Certified Correct:</p>
+            <br><br>
+            <p class="fw-bold text-decoration-underline">___________________________</p>
+            <p>Administrative Officer V</p>
+        </div>
+        <div style="float: right; width: 45%; text-align: center;">
+            <p>Approved:</p>
+            <br><br>
+            <p class="fw-bold text-decoration-underline">___________________________</p>
+            <p>Schools Division Superintendent</p>
+        </div>
+    </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, writeBatch, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, writeBatch, getDocs, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     // CONFIG
     const firebaseConfig = {
@@ -322,12 +375,13 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const reportsCol = collection(db, "monthly_reports");
+    // Collections
+    const reportsCol = collection(db, "monthly_reports_data"); // Holds individual employee records per month
     const employeesCol = collection(db, "master_employees");
+    const savedReportsCol = collection(db, "saved_reports"); // Holds metadata for finalized reports
 
     let currentReportData = [];
     let masterList = [];
-    let consolidatedData = [];
 
     // --- NAVIGATION ---
     window.showView = (viewName, link) => {
@@ -337,7 +391,7 @@
             document.getElementById(`view-${v}`).classList.add('d-none');
         });
         document.getElementById(`view-${viewName}`).classList.remove('d-none');
-        if(viewName === 'consolidation') window.loadConsolidated();
+        if(viewName === 'consolidation') window.loadSavedReports();
     };
     document.getElementById("menu-toggle").addEventListener("click", (e) => { e.preventDefault(); document.getElementById("wrapper").classList.toggle("toggled"); });
 
@@ -363,112 +417,303 @@
             const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
             const batch = writeBatch(db);
             let count = 0;
-            for(let i=16; i<data.length; i++) {
+            // Heuristic: Data starts around row 16, Name is in Column C (index 2)
+            for(let i=15; i<data.length; i++) {
                 const name = data[i][2];
-                if(name && typeof name==='string' && !name.includes("Prepared") && !masterList.some(m=>m.name===name)) {
-                    batch.set(doc(employeesCol), {name: name});
+                if(name && typeof name==='string' && name.trim() !== "" && !name.includes("Prepared") && !masterList.some(m=>m.name===name)) {
+                    batch.set(doc(employeesCol), {name: name.trim()});
                     count++;
                 }
             }
-            if(count>0) { await batch.commit(); alert(`Imported ${count} employees.`); } else { alert("No new employees found."); }
+            if(count>0) { await batch.commit(); alert(`Imported ${count} new employees.`); } else { alert("No new valid employee names found in the expected column."); }
         };
     };
-    window.deleteMaster = async(id) => { if(confirm("Remove?")) await deleteDoc(doc(db,"master_employees",id)); }
+    window.deleteMaster = async(id) => { if(confirm("Remove this employee from the Master List?")) await deleteDoc(doc(db,"master_employees",id)); }
 
     // --- 2. MONTHLY ENCODING ---
     const now = new Date();
-    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('filterMonth').value = currentMonthStr;
     
-    function loadMonthData() {
-        const m = document.getElementById('filterMonth').value;
+    let monthListenerUnsubscribe = null;
+
+    function loadMonthData(monthStr) {
+        if (monthListenerUnsubscribe) monthListenerUnsubscribe(); // Unsubscribe previous listener
+
+        const m = monthStr || document.getElementById('filterMonth').value;
         document.getElementById('dash-month-label').innerText = m;
-        onSnapshot(query(reportsCol, where("month", "==", m)), (snap) => {
+
+        const q = query(reportsCol, where("month", "==", m));
+        monthListenerUnsubscribe = onSnapshot(q, (snap) => {
             currentReportData = [];
             const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
             snap.forEach(d => { const data = d.data(); data.id = d.id; currentReportData.push(data); });
             currentReportData.sort((a,b) => a.name.localeCompare(b.name));
             
-            currentReportData.forEach(data => {
-                let travelInfo = data.travel ? `<span class="text-primary small fw-bold">${data.travel}</span>` : '';
-                let leaveInfo = data.leave ? `<span class="text-danger small fw-bold">${data.leave}</span>` : '';
-                
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold">${data.name}</td>
-                        <td>${travelInfo}</td>
-                        <td>${leaveInfo}</td>
-                        <td class="text-center">${data.tardyDays||'-'}</td>
-                        <td class="text-center">${data.tardyMins||'-'}</td>
-                        <td class="text-center small">${data.tardyConv||''}</td>
-                        <td class="text-center">${data.underDays||'-'}</td>
-                        <td class="text-center">${data.underMins||'-'}</td>
-                        <td class="text-center small">${data.underConv||''}</td>
-                        <td class="text-center fw-bold bg-success-subtle">${data.totalDays||'-'}</td>
-                        <td class="text-center fw-bold bg-success-subtle">${data.totalConv||''}</td>
-                        <td><button class="btn btn-sm btn-light border" onclick="window.editRec('${data.id}')"><i class="bi bi-pencil"></i></button></td>
-                    </tr>`;
-            });
+            if(currentReportData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="13" class="text-center text-muted my-4">No records found for this month. Click "Load Master List" to start.</td></tr>';
+            } else {
+                currentReportData.forEach(data => {
+                    tbody.innerHTML += `
+                        <tr>
+                            <td class="fw-bold text-start">${data.name}</td>
+                            <td>${data.travel||''}</td>
+                            <td>${data.leave||''}</td>
+                            <td class="text-center">${data.tardyDays||'-'}</td>
+                            <td class="text-center">${data.tardyMins||'-'}</td>
+                            <td class="text-center small">${data.tardyConv||''}</td>
+                            <td class="text-center">${data.underDays||'-'}</td>
+                            <td class="text-center">${data.underMins||'-'}</td>
+                            <td class="text-center small">${data.underConv||''}</td>
+                            <td class="text-center fw-bold bg-success-subtle">${data.totalDays||'-'}</td>
+                            <td class="text-center fw-bold bg-success-subtle">${data.totalConv||''}</td>
+                            <td class="small text-muted fst-italic text-start">${data.remarks||''}</td>
+                            <td><button class="btn btn-sm btn-light border" onclick="window.editRec('${data.id}')"><i class="bi bi-pencil"></i></button></td>
+                        </tr>`;
+                });
+            }
             document.getElementById('dash-month-count').innerText = currentReportData.length;
         });
     }
-    document.getElementById('filterMonth').addEventListener('change', loadMonthData);
-    loadMonthData();
+    document.getElementById('filterMonth').addEventListener('change', (e) => loadMonthData(e.target.value));
+    loadMonthData(); // Initial load
 
     window.populateMonth = async () => {
         const m = document.getElementById('filterMonth').value;
+        if(masterList.length === 0) return alert("Master Employee List is empty. Please import employees first.");
         const missing = masterList.filter(emp => !currentReportData.some(r => r.name === emp.name));
-        if(missing.length === 0) return alert("All employees present.");
-        if(confirm(`Add ${missing.length} employees?`)) {
+        if(missing.length === 0) return alert("All employees from the Master List are already present for this month.");
+        
+        if(confirm(`Add ${missing.length} missing employees to the ${m} report?`)) {
             const batch = writeBatch(db);
             missing.forEach(emp => {
-                batch.set(doc(reportsCol), { 
+                const newDocRef = doc(reportsCol);
+                batch.set(newDocRef, { 
                     month: m, name: emp.name, 
                     travel:"", leave:"", 
                     tardyDays:"", tardyMins:"", tardyConv:"", 
                     underDays:"", underMins:"", underConv:"", 
-                    totalDays:"", totalConv:"" 
+                    totalDays:"", totalConv:"", remarks: ""
                 });
             });
-            try { await batch.commit(); } catch(e) { alert("Save failed! Check Database Rules."); }
+            try { await batch.commit(); alert("Employees added successfully."); } catch(e) { alert("Error adding employees: " + e.message); }
         }
     };
 
-    // --- 3. CONSOLIDATED ---
-    document.getElementById('consYear').value = now.getFullYear();
-    window.loadConsolidated = async () => {
-        const year = document.getElementById('consYear').value;
-        const tbody = document.getElementById('consTableBody');
-        tbody.innerHTML = '<tr><td colspan="8" class="text-center">Loading...</td></tr>';
-        const q = query(reportsCol, where("month", ">=", `${year}-01`), where("month", "<=", `${year}-12`));
-        const snap = await getDocs(q);
-        const summary = {}; 
-        masterList.forEach(emp => { summary[emp.name] = { name: emp.name, totalTardy: 0, totalUnder: 0, months: {} }; });
-        
-        snap.forEach(doc => {
-            const d = doc.data();
-            if(!summary[d.name]) summary[d.name] = { name: d.name, totalTardy: 0, totalUnder: 0, months: {} };
-            const mKey = d.month.split('-')[1]; 
-            summary[d.name].months[mKey] = { tardy: Number(d.tardyMins || 0), under: Number(d.underMins || 0) };
-            summary[d.name].totalTardy += Number(d.tardyMins || 0);
-            summary[d.name].totalUnder += Number(d.underMins || 0);
-        });
-        
-        consolidatedData = Object.values(summary).sort((a,b) => a.name.localeCompare(b.name));
-        tbody.innerHTML = '';
-        consolidatedData.forEach(emp => {
-            tbody.innerHTML += `<tr>
-                <td class="fw-bold">${emp.name}</td>
-                <td class="text-center border-start">${emp.months['01']?.tardy||'-'}</td>
-                <td class="text-center border-start">${emp.months['02']?.tardy||'-'}</td>
-                <td class="text-center border-start">${emp.months['03']?.tardy||'-'}</td>
-                <td class="text-center border-start">${emp.months['04']?.tardy||'-'}</td>
-                <td class="text-center border-start">${emp.months['05']?.tardy||'-'}</td>
-                <td class="text-center bg-danger-subtle fw-bold text-danger border-start">${emp.totalTardy}</td>
-                <td class="text-center bg-warning-subtle fw-bold text-dark border-start">${emp.totalUnder}</td>
-            </tr>`;
+    // --- SAVE REPORT ACTION ---
+    document.getElementById('btnSaveReport').addEventListener('click', async () => {
+        const m = document.getElementById('filterMonth').value;
+        if(currentReportData.length === 0) return alert("Cannot save an empty report. Please populate the month first.");
+
+        const [year, monthNum] = m.split('-');
+        const monthName = new Date(year, monthNum - 1).toLocaleString('default', { month: 'long' });
+        const reportId = m; // Use YYYY-MM as ID to prevent duplicate months
+        const displayName = `DTR - ${monthName} ${year}`;
+
+        try {
+            // Check if already exists
+            const docSnap = await getDoc(doc(savedReportsCol, reportId));
+            if(docSnap.exists()) {
+                if(!confirm(`A report for ${displayName} already exists. Do you want to update its "Date Saved" timestamp? (Data is already saved in real-time).`)) return;
+            }
+
+            await setDoc(doc(savedReportsCol, reportId), {
+                reportId: reportId,
+                displayName: displayName,
+                month: m,
+                savedAt: new Date()
+            });
+            alert(`Report "${displayName}" has been successfully finalized and saved to the Consolidated Report list.`);
+            window.showView('consolidation'); // Take user to the list
+        } catch (e) {
+            console.error("Error saving report: ", e);
+            alert("Failed to save report metadata. See console for details.");
+        }
+    });
+
+
+    // --- 3. CONSOLIDATED REPORT (SAVED REPORTS LIST) ---
+    window.loadSavedReports = () => {
+        const tbody = document.getElementById('savedReportsBody');
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading saved reports...</td></tr>';
+
+        onSnapshot(query(savedReportsCol, orderBy("month", "desc")), (snap) => {
+            tbody.innerHTML = '';
+            if(snap.empty) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No saved reports found. Finalize a report in Monthly Encoding first.</td></tr>';
+                return;
+            }
+
+            snap.forEach(docSnap => {
+                const data = docSnap.data();
+                const date SavedStr = data.savedAt ? data.savedAt.toDate().toLocaleString() : 'N/A';
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="fw-bold text-primary">${data.displayName}</td>
+                        <td>${data.month}</td>
+                        <td class="small text-muted">${dateSavedStr}</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-dark me-1" onclick="window.printReport('${data.month}', '${data.displayName}')" title="Print Report"><i class="bi bi-printer"></i></button>
+                            <button class="btn btn-sm btn-outline-success me-1" onclick="window.downloadReportxls('${data.month}', '${data.displayName}')" title="Download Excel"><i class="bi bi-file-earmark-excel"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="window.editReport('${data.month}')" title="Edit Report"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteSavedReport('${data.reportId}')" title="Delete Report"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+            });
         });
     };
+
+    // --- HELPER: Fetch Data for a specific month ---
+    async function getMonthDataForAction(monthStr) {
+        const q = query(reportsCol, where("month", "==", monthStr));
+        const snap = await getDocs(q);
+        const data = [];
+        snap.forEach(d => data.push(d.data()));
+        return data.sort((a,b) => a.name.localeCompare(b.name));
+    }
+
+    // --- ACTION: EDIT REPORT ---
+    window.editReport = (monthStr) => {
+        document.getElementById('filterMonth').value = monthStr;
+        // Manually trigger change event to load data
+        document.getElementById('filterMonth').dispatchEvent(new Event('change'));
+        window.showView('encoding', document.querySelector('#sidebar-wrapper .list-group-item[onclick*="encoding"]'));
+    };
+
+    // --- ACTION: DELETE REPORT ---
+    window.deleteSavedReport = async (reportId) => {
+        if(!confirm("Are you sure you want to delete this report? This will also delete all individual employee records for this month based on the provided template structure. This action cannot be undone.")) return;
+
+        try {
+            const m = reportId; // reportId is the YYYY-MM string
+            // 1. Delete monthly data records
+            const q = query(reportsCol, where("month", "==", m));
+            const snap = await getDocs(q);
+            const batch = writeBatch(db);
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+
+            // 2. Delete the metadata document
+            await deleteDoc(doc(savedReportsCol, reportId));
+            alert("Report and associated data deleted successfully.");
+        } catch (e) {
+            console.error("Error deleting report: ", e);
+            alert("Failed to delete report. See console.");
+        }
+    };
+
+    // --- ACTION: PRINT REPORT (HTML Based) ---
+    window.printReport = async (monthStr, displayName) => {
+        const data = await getMonthDataForAction(monthStr);
+        if(data.length === 0) return alert("No data found for this month to print.");
+
+        document.getElementById('print-title').innerText = `Daily Time Record Report - ${displayName.replace('DTR - ', '')}`;
+        const tbody = document.getElementById('print-table-body');
+        tbody.innerHTML = '';
+
+        data.forEach(rec => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-left" style="font-weight: bold;">${rec.name}</td>
+                    <td>${rec.travel}</td>
+                    <td>${rec.leave}</td>
+                    <td>${rec.tardyDays}</td>
+                    <td>${rec.tardyMins}</td>
+                    <td>${rec.tardyConv}</td>
+                    <td>${rec.underDays}</td>
+                    <td>${rec.underMins}</td>
+                    <td>${rec.underConv}</td>
+                    <td style="font-weight: bold;">${rec.totalDays}</td>
+                    <td style="font-weight: bold;">${rec.totalConv}</td>
+                    <td class="text-left" style="font-style: italic;">${rec.remarks}</td>
+                </tr>`;
+        });
+
+        window.print();
+    };
+
+
+    // --- ACTION: DOWNLOAD EXCEL (SheetJS based on Template Structure) ---
+    window.downloadReportxls = async (monthStr, displayName) => {
+        const data = await getMonthDataForAction(monthStr);
+        if(data.length === 0) return alert("No data found for this month to download.");
+
+        // Construct the Excel data array matching the template's layout
+        const excelData = [
+            ["DEPARTMENT OF EDUCATION"],
+            ["Region I"],
+            ["San Fernando City (La Union)"],
+            [],
+            ["DAILY TIME RECORD REPORT"],
+            [`For the month of: ${displayName.replace('DTR - ', '')}`],
+            [], [], // Spacer rows
+            // Header Rows (Rows 9-10 in 0-indexed array, corresponding to rows 14-15 in Excel)
+            [
+                "NAME OF EMPLOYEE", "TRAVEL", "LEAVE", 
+                "TARDINESS", null, null, // Span 3
+                "UNDERTIME", null, null, // Span 3
+                "GRAND TOTAL", null,     // Span 2
+                "REMARKS"
+            ],
+            [
+                null, null, null, // Skip first 3
+                "No. of Days", "Minutes", "Conversion",
+                "No. of Days", "Minutes", "Conversion",
+                "No. of Days", "Conversion",
+                null // Skip remarks
+            ]
+        ];
+
+        // Add Data Rows
+        data.forEach(rec => {
+            excelData.push([
+                rec.name,
+                rec.travel,
+                rec.leave,
+                rec.tardyDays, rec.tardyMins, rec.tardyConv,
+                rec.underDays, rec.underMins, rec.underConv,
+                rec.totalDays, rec.totalConv,
+                rec.remarks
+            ]);
+        });
+
+        // Create Workbook and Sheet
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(excelData);
+
+        // Define Merges for Headers
+        // (s={r,c}, e={r,c}) -> start/end row/col (0-indexed)
+        // Header starts at row index 8
+        ws['!merges'] = [
+             // Main Headers Spans
+            { s: {r: 8, c: 3}, e: {r: 8, c: 5} }, // TARDINESS (D9:F9)
+            { s: {r: 8, c: 6}, e: {r: 8, c: 8} }, // UNDERTIME (G9:I9)
+            { s: {r: 8, c: 9}, e: {r: 8, c: 10} }, // GRAND TOTAL (J9:K9)
+            // Rowspans for single headers
+            { s: {r: 8, c: 0}, e: {r: 9, c: 0} }, // NAME (A9:A10)
+            { s: {r: 8, c: 1}, e: {r: 9, c: 1} }, // TRAVEL (B9:B10)
+            { s: {r: 8, c: 2}, e: {r: 9, c: 2} }, // LEAVE (C9:C10)
+            { s: {r: 8, c: 11}, e: {r: 9, c: 11} } // REMARKS (L9:L10)
+        ];
+
+        // Set column widths for better appearance
+        ws['!cols'] = [
+            { wch: 30 }, // Name
+            { wch: 15 }, // Travel
+            { wch: 15 }, // Leave
+            { wch: 10 }, { wch: 8 }, { wch: 10 }, // Tardy
+            { wch: 10 }, { wch: 8 }, { wch: 10 }, // Under
+            { wch: 10 }, { wch: 10 }, // Total
+            { wch: 25 }  // Remarks
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "DTR Report");
+        const fileName = `${displayName.replace(/[^a-zA-Z0-9-_]/g, '_')}.xlsx`;
+        XLSX.writeFile(wb, fileName);
+    };
+
 
     // --- 4. AUTO-CALCULATION LOGIC ---
     function recalculateTotals() {
@@ -481,22 +726,22 @@
         document.getElementById('inpTotalConv').value = (tConv + uConv).toFixed(3);
     }
 
-    // --- 5. EDIT & SAVE ---
+    // --- 5. EDIT & SAVE RECORD (Modal) ---
     window.editRec = (id) => {
         const rec = currentReportData.find(r=>r.id===id);
         if(!rec) return;
         document.getElementById('editId').value = rec.id;
         document.getElementById('editNameDisplay').innerText = rec.name;
+        document.getElementById('inpRemarks').value = rec.remarks || '';
         
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              document.getElementById(`inp${k}`).value = rec[k.charAt(0).toLowerCase()+k.slice(1)] || '';
         });
 
-        // Add Listeners
         const calcInputs = ['inpTardyDays', 'inpUnderDays', 'inpTardyConv', 'inpUnderConv'];
         calcInputs.forEach(id => {
             const el = document.getElementById(id);
-            el.removeEventListener('input', recalculateTotals); // clean previous
+            el.removeEventListener('input', recalculateTotals);
             el.addEventListener('input', recalculateTotals);
         });
 
@@ -505,46 +750,16 @@
 
     document.getElementById('btnSave').addEventListener('click', async () => {
         const id = document.getElementById('editId').value;
-        const payload = {};
+        const payload = { remarks: document.getElementById('inpRemarks').value };
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              payload[k.charAt(0).toLowerCase()+k.slice(1)] = document.getElementById(`inp${k}`).value;
         });
         try {
-            await updateDoc(doc(db, "monthly_reports", id), payload);
+            await updateDoc(doc(reportsCol, id), payload);
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
-        } catch(e) { alert("Save failed!"); }
+        } catch(e) { alert("Save failed: " + e.message); }
     });
 
-    // --- 6. EXCEL EXPORT (UPDATED MAPPING) ---
-    document.getElementById('btnGenerate').addEventListener('click', () => {
-        const f = document.getElementById('templateFile');
-        if(!f.files[0]) return alert("Upload template.");
-        const r = new FileReader(); r.readAsArrayBuffer(f.files[0]);
-        r.onload = (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type:'array'});
-            const sheet = wb.Sheets[wb.SheetNames[0]]; const sData = XLSX.utils.sheet_to_json(sheet, {header:1});
-            currentReportData.forEach(rec => {
-                let rowIdx = -1; for(let i=0; i<sData.length; i++) if(sData[i][2] && typeof sData[i][2]==='string' && sData[i][2].includes(rec.name)) { rowIdx=i; break; }
-                if(rowIdx!==-1) {
-                    const w = (c,v) => { const ref=XLSX.utils.encode_cell({c:c,r:rowIdx}); if(!sheet[ref]) sheet[ref]={t:'s',v:''}; sheet[ref].v=v; };
-                    // Travel(D/3), Leave(E/4)
-                    if(rec.travel) w(3,rec.travel); if(rec.leave) w(4,rec.leave);
-                    // Tardy: Days(F/5), Mins(G/6), Conv(H/7)
-                    if(rec.tardyDays) w(5,Number(rec.tardyDays)); 
-                    if(rec.tardyMins) w(6,Number(rec.tardyMins)); 
-                    if(rec.tardyConv) w(7,Number(rec.tardyConv));
-                    // Undertime: Days(I/8), Mins(J/9), Conv(K/10)
-                    if(rec.underDays) w(8,Number(rec.underDays)); 
-                    if(rec.underMins) w(9,Number(rec.underMins)); 
-                    if(rec.underConv) w(10,Number(rec.underConv));
-                    // Grand Total: Days(L/11), Conv(M/12)
-                    if(rec.totalDays) w(11,Number(rec.totalDays)); 
-                    if(rec.totalConv) w(12,Number(rec.totalConv));
-                }
-            });
-            XLSX.writeFile(wb, `Report_${document.getElementById('filterMonth').value}.xlsx`);
-        };
-    });
 </script>
 </body>
 </html>
