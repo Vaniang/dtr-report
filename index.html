@@ -240,24 +240,24 @@
                     <div class="col-4">
                         <div class="p-2 bg-light rounded border">
                             <h6 class="text-danger small fw-bold">TARDINESS</h6>
-                            <input type="number" id="inpTardyDays" class="form-control mb-1" placeholder="Days">
+                            <input type="number" id="inpTardyDays" class="form-control mb-1 calc-input" placeholder="Days">
                             <input type="number" id="inpTardyMins" class="form-control mb-1" placeholder="Minutes">
-                            <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv">
+                            <input type="number" id="inpTardyConv" class="form-control calc-input" placeholder="Conv">
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-2 bg-light rounded border">
                             <h6 class="text-warning text-dark small fw-bold">UNDERTIME</h6>
-                            <input type="number" id="inpUnderDays" class="form-control mb-1" placeholder="Days">
+                            <input type="number" id="inpUnderDays" class="form-control mb-1 calc-input" placeholder="Days">
                             <input type="number" id="inpUnderMins" class="form-control mb-1" placeholder="Minutes">
-                            <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv">
+                            <input type="number" id="inpUnderConv" class="form-control calc-input" placeholder="Conv">
                         </div>
                     </div>
                     <div class="col-4">
                         <div class="p-2 bg-light rounded border">
                             <h6 class="text-success small fw-bold">GRAND TOTAL</h6>
-                            <input type="number" id="inpTotalDays" class="form-control mb-1" placeholder="Total Days">
-                            <input type="number" id="inpTotalConv" class="form-control" placeholder="Total Conv">
+                            <input type="number" id="inpTotalDays" class="form-control mb-1" placeholder="Total Days" readonly>
+                            <input type="number" id="inpTotalConv" class="form-control" placeholder="Total Conv" readonly>
                         </div>
                     </div>
                 </div>
@@ -292,7 +292,6 @@
     const reportsCol = collection(db, "monthly_reports");
     const employeesCol = collection(db, "master_employees");
 
-    // Global variables accessible by window functions
     let currentReportData = [];
     let masterList = [];
     let consolidatedData = [];
@@ -355,7 +354,7 @@
             const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
             snap.forEach(d => { const data = d.data(); data.id = d.id; currentReportData.push(data); });
-            currentReportData.sort((a,b) => a.name.localeCompare(b.name)); // Sort A-Z
+            currentReportData.sort((a,b) => a.name.localeCompare(b.name));
             
             currentReportData.forEach(data => {
                 tbody.innerHTML += `
@@ -424,16 +423,41 @@
         XLSX.writeFile(wb, `Consolidated_Report_${document.getElementById('consYear').value}.xlsx`);
     };
 
-    // --- 4. EDIT & SAVE (ATTACHED TO WINDOW) ---
+    // --- 4. EDIT & SAVE (WITH AUTO-CALCULATION) ---
+    
+    // Auto Calculate Logic
+    function attachCalcListeners() {
+        const inputs = document.querySelectorAll('.calc-input');
+        inputs.forEach(input => {
+            input.addEventListener('input', () => {
+                const tDays = parseFloat(document.getElementById('inpTardyDays').value) || 0;
+                const tConv = parseFloat(document.getElementById('inpTardyConv').value) || 0;
+                const uDays = parseFloat(document.getElementById('inpUnderDays').value) || 0;
+                const uConv = parseFloat(document.getElementById('inpUnderConv').value) || 0;
+
+                // Grand Total Days = Tardy Days + Under Days
+                document.getElementById('inpTotalDays').value = tDays + uDays;
+
+                // Grand Total Conv = Tardy Conv + Under Conv
+                // (Using toFixed(3) to handle standard deped decimal places)
+                document.getElementById('inpTotalConv').value = (tConv + uConv).toFixed(3);
+            });
+        });
+    }
+
     window.editRec = (id) => {
         const rec = currentReportData.find(r=>r.id===id);
         if(!rec) return;
         document.getElementById('editId').value = rec.id;
         document.getElementById('editNameDisplay').innerText = rec.name;
+        
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              document.getElementById(`inp${k}`).value = rec[k.charAt(0).toLowerCase()+k.slice(1)] || '';
         });
-        // NOW BOOTSTRAP IS DEFINED
+
+        // Initialize listeners
+        attachCalcListeners();
+
         new bootstrap.Modal(document.getElementById('editModal')).show();
     };
 
@@ -445,7 +469,6 @@
         });
         try {
             await updateDoc(doc(db, "monthly_reports", id), payload);
-            // NOW BOOTSTRAP IS DEFINED
             bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
         } catch(e) { alert("Save failed! Check Database Rules."); }
     });
