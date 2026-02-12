@@ -3,106 +3,154 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DepEd DTR Monitoring System</title>
+    <title>DepEd DTR Monitoring System V2</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
-        body { overflow-x: hidden; background-color: #f4f6f9; }
-        /* Sidebar Styling */
+        body { overflow-x: hidden; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         #sidebar-wrapper {
             min-height: 100vh;
-            margin-left: -15rem;
+            margin-left: -16rem;
             transition: margin .25s ease-out;
-            background-color: #343a40;
+            background-color: #212529;
             color: white;
+            width: 16rem;
         }
-        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; border-bottom: 1px solid #4b545c; }
-        #sidebar-wrapper .list-group-item { background-color: #343a40; color: #c2c7d0; border: none; }
-        #sidebar-wrapper .list-group-item:hover { background-color: #495057; color: #fff; }
-        #sidebar-wrapper .list-group-item.active { background-color: #007bff; color: #fff; }
+        #sidebar-wrapper .sidebar-heading { padding: 1.2rem; font-size: 1.2rem; border-bottom: 1px solid #343a40; background: #1a1e21; }
+        #sidebar-wrapper .list-group-item { background-color: transparent; color: #ced4da; border: none; padding: 12px 20px; }
+        #sidebar-wrapper .list-group-item:hover { background-color: #343a40; color: #fff; }
+        #sidebar-wrapper .list-group-item.active { background-color: #0d6efd; color: #fff; border-left: 4px solid #fff; }
         #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
-        .stat-card { border-left: 5px solid #007bff; }
-        .table-sm td, .table-sm th { font-size: 0.9rem; vertical-align: middle; }
+        .stat-card { border-radius: 10px; border: none; transition: transform 0.2s; }
+        .stat-card:hover { transform: translateY(-5px); }
+        .table-custom th { background-color: #e9ecef; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.5px; }
+        .avatar-initial { width: 30px; height: 30px; background-color: #e9ecef; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; color: #495057; font-size: 0.8rem; margin-right: 10px; }
     </style>
 </head>
 <body>
 
 <div class="d-flex" id="wrapper">
-    <div class="border-end" id="sidebar-wrapper" style="width: 240px; margin-left: 0;">
-        <div class="sidebar-heading fw-bold">DTR MONITORING</div>
-        <div class="list-group list-group-flush">
+    <div class="border-end" id="sidebar-wrapper">
+        <div class="sidebar-heading fw-bold"><i class="bi bi-building-check me-2"></i> DTR MANAGER</div>
+        <div class="list-group list-group-flush mt-3">
             <a href="#" class="list-group-item list-group-item-action active" onclick="showView('dashboard', this)">
-                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+                <i class="bi bi-grid-1x2 me-2"></i> Dashboard
             </a>
             <a href="#" class="list-group-item list-group-item-action" onclick="showView('encoding', this)">
-                <i class="bi bi-pencil-square me-2"></i> Report Encoding
+                <i class="bi bi-calendar-week me-2"></i> Monthly Encoding
             </a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="showView('settings', this)">
-                <i class="bi bi-gear me-2"></i> Settings
+            <a href="#" class="list-group-item list-group-item-action" onclick="showView('employees', this)">
+                <i class="bi bi-people me-2"></i> Master Employee List
             </a>
         </div>
     </div>
 
     <div id="page-content-wrapper" class="w-100">
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3">
-            <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="bi bi-list"></i></button>
-            <div class="ms-auto fw-bold text-primary">Region I - San Fernando City</div>
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-3 shadow-sm">
+            <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle"><i class="bi bi-list"></i></button>
+            <div class="fw-bold text-dark fs-5">Region I - San Fernando City (La Union)</div>
         </nav>
 
         <div class="container-fluid p-4">
             
             <div id="view-dashboard">
-                <h3 class="mb-4">Dashboard Overview</h3>
-                <div class="row g-3">
+                <h4 class="mb-4 text-secondary">Overview</h4>
+                <div class="row g-4">
                     <div class="col-md-3">
-                        <div class="card shadow-sm stat-card p-3">
-                            <h6 class="text-muted">Total Employees</h6>
-                            <h2 id="dash-total">0</h2>
+                        <div class="card stat-card shadow-sm h-100 bg-primary text-white">
+                            <div class="card-body">
+                                <h6 class="opacity-75">Master List</h6>
+                                <h2 class="fw-bold display-6" id="dash-master-count">0</h2>
+                                <small>Registered Employees</small>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card shadow-sm stat-card p-3" style="border-color: #dc3545;">
-                            <h6 class="text-muted">Total Tardiness (Mins)</h6>
-                            <h2 id="dash-tardy">0</h2>
+                        <div class="card stat-card shadow-sm h-100">
+                            <div class="card-body">
+                                <h6 class="text-muted">Encoded This Month</h6>
+                                <h2 class="fw-bold display-6 text-dark" id="dash-month-count">0</h2>
+                                <small class="text-success" id="dash-month-label">Current Month</small>
+                            </div>
                         </div>
                     </div>
                     <div class="col-md-3">
-                        <div class="card shadow-sm stat-card p-3" style="border-color: #ffc107;">
-                            <h6 class="text-muted">With Travel/Leave</h6>
-                            <h2 id="dash-leaves">0</h2>
+                        <div class="card stat-card shadow-sm h-100 border-start border-4 border-warning">
+                            <div class="card-body">
+                                <h6 class="text-muted">Travel / Leave</h6>
+                                <h2 class="fw-bold display-6 text-dark" id="dash-issues">0</h2>
+                                <small>Records with notes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="view-employees" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-secondary">Master Employee List</h4>
+                    <div class="card p-2 border-0 shadow-sm bg-light">
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="file" id="masterUpload" class="form-control form-control-sm" accept=".xlsx" style="width: 200px;">
+                            <button class="btn btn-sm btn-dark" onclick="importMasterList()">
+                                <i class="bi bi-cloud-upload me-1"></i> Import from Template
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm border-0">
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 70vh;">
+                            <table class="table table-hover table-striped mb-0">
+                                <thead class="table-dark sticky-top">
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Employee Name</th>
+                                        <th class="text-end">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="masterTableBody">
+                                    </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div id="view-encoding" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h3>Monthly Report Encoding</h3>
-                    <div class="d-flex gap-2">
-                         <input type="month" id="filterMonth" class="form-control" value="2026-01">
-                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="resetForm()">
-                            <i class="bi bi-plus-lg"></i> Add New
-                         </button>
+                <div class="row mb-3 align-items-center">
+                    <div class="col-md-6">
+                        <h4 class="text-secondary mb-0">Monthly Report Encoding</h4>
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <div class="d-inline-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm">
+                            <label class="fw-bold small text-muted">Month:</label>
+                            <input type="month" id="filterMonth" class="form-control form-control-sm" style="width: 150px;">
+                            <button class="btn btn-primary btn-sm" onclick="populateMonth()">
+                                <i class="bi bi-person-plus-fill me-1"></i> Load Employees
+                            </button>
+                        </div>
                     </div>
                 </div>
 
-                <div class="card shadow-sm">
-                    <div class="card-body">
-                        <div class="table-responsive">
-                            <table class="table table-bordered table-hover table-sm">
-                                <thead class="table-light text-center">
+                <div class="card shadow-sm border-0 mb-4">
+                    <div class="card-body p-0">
+                        <div class="table-responsive" style="max-height: 60vh;">
+                            <table class="table table-bordered table-sm table-hover table-custom mb-0" style="font-size: 0.85rem;">
+                                <thead class="text-center sticky-top shadow-sm">
                                     <tr>
-                                        <th rowspan="2" style="vertical-align: middle;">Name of Employee</th>
-                                        <th rowspan="2" style="vertical-align: middle;">Travel</th>
-                                        <th rowspan="2" style="vertical-align: middle;">Leave</th>
-                                        <th colspan="3">Tardiness</th>
-                                        <th colspan="3">Undertime</th>
-                                        <th colspan="2">Grand Total</th>
-                                        <th rowspan="2" style="vertical-align: middle;">Action</th>
+                                        <th rowspan="2" class="align-middle bg-light">Employee Name</th>
+                                        <th rowspan="2" class="align-middle bg-light" style="width: 100px;">Travel</th>
+                                        <th rowspan="2" class="align-middle bg-light" style="width: 100px;">Leave</th>
+                                        <th colspan="3" class="bg-light text-danger">Tardiness</th>
+                                        <th colspan="3" class="bg-light text-warning">Undertime</th>
+                                        <th colspan="2" class="bg-light text-success">Grand Total</th>
+                                        <th rowspan="2" class="align-middle bg-light">Action</th>
                                     </tr>
-                                    <tr style="font-size: 0.8rem;">
+                                    <tr class="bg-light">
                                         <th>Days</th><th>Mins</th><th>Conv</th>
                                         <th>Days</th><th>Mins</th><th>Conv</th>
                                         <th>Days</th><th>Conv</th>
@@ -115,25 +163,18 @@
                     </div>
                 </div>
 
-                <div class="card mt-4 bg-light border-0">
-                    <div class="card-body">
-                        <h5 class="card-title"><i class="bi bi-file-earmark-spreadsheet"></i> Generate Excel Report</h5>
-                        <p class="text-muted small">Upload your 'DTR 2026.xlsx' template. The system will match names and fill the data.</p>
-                        <div class="row g-2">
-                            <div class="col-md-4">
-                                <input type="file" id="templateFile" class="form-control" accept=".xlsx">
-                            </div>
-                            <div class="col-md-2">
-                                <button class="btn btn-success w-100" id="btnGenerate">Generate</button>
-                            </div>
+                <div class="card bg-success-subtle border-success">
+                    <div class="card-body d-flex align-items-center justify-content-between">
+                        <div>
+                            <h5 class="card-title text-success fw-bold"><i class="bi bi-file-earmark-excel"></i> Generate Final Report</h5>
+                            <p class="mb-0 small text-success-emphasis">Upload the 'DTR 2026.xlsx' file. The system will fill the data for the selected month.</p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <input type="file" id="templateFile" class="form-control" accept=".xlsx">
+                            <button class="btn btn-success" id="btnGenerate">Download Excel</button>
                         </div>
                     </div>
                 </div>
-            </div>
-
-             <div id="view-settings" class="d-none">
-                <h3>Settings</h3>
-                <p>System configuration...</p>
             </div>
 
         </div>
@@ -143,61 +184,86 @@
 <div class="modal fade" id="editModal" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Edit Employee Record</h5>
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title" id="modalTitle">Edit Record</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
                 <input type="hidden" id="editId">
+                <h5 id="editNameDisplay" class="text-primary fw-bold mb-3"></h5>
                 
-                <div class="mb-3">
-                    <label class="fw-bold">Employee Name</label>
-                    <input type="text" id="inpName" class="form-control" placeholder="Lastname, Firstname M.">
-                </div>
-
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label>Travel (Dates)</label>
-                        <input type="text" id="inpTravel" class="form-control" placeholder="e.g. 6-9, 14-15">
-                    </div>
-                    <div class="col-md-6">
-                        <label>Leave (Dates)</label>
-                        <input type="text" id="inpLeave" class="form-control" placeholder="e.g. 29-30">
-                    </div>
-                </div>
-
                 <div class="row g-3">
-                    <div class="col-md-4 p-2 bg-light border rounded">
-                        <h6 class="text-danger">Tardiness</h6>
-                        <input type="number" id="inpTardyDays" class="form-control mb-1" placeholder="Days">
-                        <input type="number" id="inpTardyMins" class="form-control mb-1" placeholder="Mins">
-                        <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv">
+                    <div class="col-md-6">
+                        <label class="small text-muted">Travel Dates (e.g. 6-9, 15)</label>
+                        <input type="text" id="inpTravel" class="form-control">
                     </div>
-                    <div class="col-md-4 p-2 bg-light border rounded">
-                        <h6 class="text-warning text-dark">Undertime</h6>
-                        <input type="number" id="inpUnderDays" class="form-control mb-1" placeholder="Days">
-                        <input type="number" id="inpUnderMins" class="form-control mb-1" placeholder="Mins">
-                        <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv">
+                    <div class="col-md-6">
+                        <label class="small text-muted">Leave Dates (e.g. 29-30)</label>
+                        <input type="text" id="inpLeave" class="form-control">
                     </div>
-                    <div class="col-md-4 p-2 bg-light border rounded">
-                        <h6 class="text-success">Grand Total</h6>
-                        <input type="number" id="inpTotalDays" class="form-control mb-1" placeholder="Total Days">
-                        <input type="number" id="inpTotalConv" class="form-control" placeholder="Total Conv">
+                </div>
+                <hr>
+                <div class="row g-3 text-center">
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light border rounded">
+                            <h6 class="text-danger small fw-bold">TARDINESS</h6>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Days</span>
+                                <input type="number" id="inpTardyDays" class="form-control">
+                            </div>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Mins</span>
+                                <input type="number" id="inpTardyMins" class="form-control">
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Conv</span>
+                                <input type="number" id="inpTardyConv" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light border rounded">
+                            <h6 class="text-warning text-dark small fw-bold">UNDERTIME</h6>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Days</span>
+                                <input type="number" id="inpUnderDays" class="form-control">
+                            </div>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Mins</span>
+                                <input type="number" id="inpUnderMins" class="form-control">
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Conv</span>
+                                <input type="number" id="inpUnderConv" class="form-control">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="p-2 bg-light border rounded">
+                            <h6 class="text-success small fw-bold">GRAND TOTAL</h6>
+                            <div class="input-group input-group-sm mb-1">
+                                <span class="input-group-text">Days</span>
+                                <input type="number" id="inpTotalDays" class="form-control">
+                            </div>
+                            <div class="input-group input-group-sm">
+                                <span class="input-group-text">Conv</span>
+                                <input type="number" id="inpTotalConv" class="form-control">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="btnSave">Save Record</button>
+                <button type="button" class="btn btn-primary" id="btnSave">Save Changes</button>
             </div>
         </div>
     </div>
 </div>
 
 <script type="module">
-    // --- FIREBASE SETUP ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, getDocs, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAaU2vOGHM4ugJXGhFLmrAJdXi1bPr8wig",
@@ -211,154 +277,219 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const colRef = collection(db, "monthly_reports");
+    const reportsCol = collection(db, "monthly_reports");
+    const employeesCol = collection(db, "master_employees");
 
-    let currentData = [];
+    let currentReportData = [];
+    let masterList = [];
 
-    // --- VIEW CONTROLLER ---
+    // --- INITIALIZATION ---
+    // Set default month to current month
+    const now = new Date();
+    const currentMonthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    document.getElementById('filterMonth').value = currentMonthStr;
+
+    // --- SIDEBAR NAV ---
     window.showView = (viewName, link) => {
         document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(el => el.classList.remove('active'));
         if(link) link.classList.add('active');
         
-        ['dashboard', 'encoding', 'settings'].forEach(v => {
+        ['dashboard', 'encoding', 'employees'].forEach(v => {
             document.getElementById(`view-${v}`).classList.add('d-none');
         });
         document.getElementById(`view-${viewName}`).classList.remove('d-none');
     };
-
-    // Sidebar Toggle
-    document.getElementById("menu-toggle").addEventListener("click", function(e) {
+    document.getElementById("menu-toggle").addEventListener("click", (e) => {
         e.preventDefault();
         document.getElementById("wrapper").classList.toggle("toggled");
     });
 
-    // --- DATA LOADING ---
-    const monthPicker = document.getElementById('filterMonth');
+    // --- LOGIC: MASTER EMPLOYEE LIST ---
     
-    function loadData() {
-        const selectedMonth = monthPicker.value;
-        const q = query(colRef, where("month", "==", selectedMonth));
+    // Load Master List Realtime
+    onSnapshot(query(employeesCol), (snap) => {
+        masterList = [];
+        const tbody = document.getElementById('masterTableBody');
+        tbody.innerHTML = '';
+        
+        snap.forEach(d => {
+            const data = d.data();
+            data.id = d.id;
+            masterList.push(data);
+            
+            tbody.innerHTML += `
+                <tr>
+                    <td>${masterList.length}</td>
+                    <td class="fw-bold">${data.name}</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger" onclick="deleteMaster('${data.id}')"><i class="bi bi-trash"></i></button>
+                    </td>
+                </tr>
+            `;
+        });
+        document.getElementById('dash-master-count').innerText = masterList.length;
+    });
 
-        onSnapshot(q, (snapshot) => {
+    window.deleteMaster = async (id) => {
+        if(confirm("Remove from Master List?")) await deleteDoc(doc(db, "master_employees", id));
+    }
+
+    // Import Logic (Reads DTR 2026.xlsx format)
+    window.importMasterList = () => {
+        const fileIn = document.getElementById('masterUpload');
+        if(!fileIn.files[0]) return alert("Select a file first.");
+
+        const reader = new FileReader();
+        reader.readAsArrayBuffer(fileIn.files[0]);
+        reader.onload = async (e) => {
+            const data = new Uint8Array(e.target.result);
+            const wb = XLSX.read(data, {type: 'array'});
+            const ws = wb.Sheets[wb.SheetNames[0]];
+            const jsonData = XLSX.utils.sheet_to_json(ws, {header: 1});
+
+            // Batch write to Firestore
+            const batch = writeBatch(db);
+            let count = 0;
+
+            // Start from row 16 (Index 16 in code is Row 17 in Excel, assume data starts around there)
+            // Based on your CSV, the header "NAME OF EMPLOYEE" is at row index 14. Data likely starts index 16.
+            for(let i=16; i < jsonData.length; i++) {
+                const row = jsonData[i];
+                // Name is Column C (Index 2)
+                const name = row[2]; 
+                
+                // Stop if name is empty or hits "Prepared by"
+                if(!name || (typeof name === 'string' && name.includes("Prepared by"))) continue;
+
+                // Check duplicates in local list before adding
+                if(!masterList.some(m => m.name === name)) {
+                    const newDocRef = doc(employeesCol); // Auto ID
+                    batch.set(newDocRef, { name: name });
+                    count++;
+                }
+            }
+
+            if(count > 0) {
+                await batch.commit();
+                alert(`Successfully imported ${count} new employees to Master List.`);
+            } else {
+                alert("No new employees found or file format issue.");
+            }
+        };
+    };
+
+    // --- LOGIC: MONTHLY REPORTING ---
+
+    const monthPicker = document.getElementById('filterMonth');
+
+    // 1. Load Data for Selected Month
+    function loadMonthData() {
+        const selectedMonth = monthPicker.value;
+        document.getElementById('dash-month-label').innerText = selectedMonth;
+
+        const q = query(reportsCol, where("month", "==", selectedMonth));
+        onSnapshot(q, (snap) => {
+            currentReportData = [];
             const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
-            currentData = [];
-            
-            // Dashboard Stats
-            let totalMins = 0;
-            let withIssues = 0;
+            let issuesCount = 0;
 
-            snapshot.forEach(docSnap => {
-                const data = docSnap.data();
-                data.id = docSnap.id;
-                currentData.push(data);
+            snap.forEach(d => {
+                const data = d.data();
+                data.id = d.id;
+                currentReportData.push(data);
+                
+                if(data.travel || data.leave) issuesCount++;
 
-                // Stats
-                totalMins += Number(data.tardyMins || 0);
-                if(data.travel || data.leave) withIssues++;
-
-                const row = `
+                tbody.innerHTML += `
                     <tr>
-                        <td class="fw-bold">${data.name}</td>
-                        <td>${data.travel || ''}</td>
-                        <td>${data.leave || ''}</td>
-                        <td class="text-center">${data.tardyDays || ''}</td>
-                        <td class="text-center">${data.tardyMins || ''}</td>
-                        <td class="text-center">${data.tardyConv || ''}</td>
-                        <td class="text-center">${data.underDays || ''}</td>
-                        <td class="text-center">${data.underMins || ''}</td>
-                        <td class="text-center">${data.underConv || ''}</td>
-                        <td class="text-center fw-bold">${data.totalDays || ''}</td>
-                        <td class="text-center fw-bold">${data.totalConv || ''}</td>
-                        <td>
-                            <button class="btn btn-sm btn-outline-primary" onclick="window.editRec('${data.id}')"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="window.delRec('${data.id}')"><i class="bi bi-trash"></i></button>
+                        <td class="fw-bold text-dark"><div class="d-flex align-items-center"><span class="avatar-initial">${data.name.charAt(0)}</span>${data.name}</div></td>
+                        <td class="text-secondary small">${data.travel || ''}</td>
+                        <td class="text-secondary small">${data.leave || ''}</td>
+                        <td class="text-center text-danger">${data.tardyDays || ''}</td>
+                        <td class="text-center text-danger">${data.tardyMins || ''}</td>
+                        <td class="text-center text-danger">${data.tardyConv || ''}</td>
+                        <td class="text-center text-warning text-dark">${data.underDays || ''}</td>
+                        <td class="text-center text-warning text-dark">${data.underMins || ''}</td>
+                        <td class="text-center text-warning text-dark">${data.underConv || ''}</td>
+                        <td class="text-center fw-bold text-success">${data.totalDays || ''}</td>
+                        <td class="text-center fw-bold text-success">${data.totalConv || ''}</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-light border" onclick="window.editRec('${data.id}')"><i class="bi bi-pencil-fill text-primary"></i></button>
                         </td>
                     </tr>
                 `;
-                tbody.innerHTML += row;
             });
-
-            // Update Dashboard
-            document.getElementById('dash-total').innerText = currentData.length;
-            document.getElementById('dash-tardy').innerText = totalMins;
-            document.getElementById('dash-leaves').innerText = withIssues;
+            document.getElementById('dash-month-count').innerText = currentReportData.length;
+            document.getElementById('dash-issues').innerText = issuesCount;
         });
     }
+    monthPicker.addEventListener('change', loadMonthData);
+    loadMonthData(); // Init
 
-    monthPicker.addEventListener('change', loadData);
-    loadData(); // Initial Load
+    // 2. Populate Month (The Automation Feature)
+    window.populateMonth = async () => {
+        if(masterList.length === 0) return alert("Your Master List is empty. Go to 'Master Employee List' and import your template first.");
+        const selectedMonth = monthPicker.value;
 
-    // --- CRUD OPERATIONS ---
+        // Find which employees are missing for this month
+        const missingEmployees = masterList.filter(m => !currentReportData.some(r => r.name === m.name));
 
-    window.resetForm = () => {
-        document.getElementById('editId').value = '';
-        document.querySelectorAll('#editModal input').forEach(i => i.value = '');
+        if(missingEmployees.length === 0) return alert("All employees are already added for this month.");
+
+        if(confirm(`Add ${missingEmployees.length} employees to ${selectedMonth} report?`)) {
+            const batch = writeBatch(db);
+            missingEmployees.forEach(emp => {
+                const newRef = doc(reportsCol);
+                batch.set(newRef, {
+                    month: selectedMonth,
+                    name: emp.name,
+                    travel: "", leave: "",
+                    tardyDays: "", tardyMins: "", tardyConv: "",
+                    underDays: "", underMins: "", underConv: "",
+                    totalDays: "", totalConv: ""
+                });
+            });
+            await batch.commit();
+            alert("Employees added successfully!");
+        }
     };
 
+    // 3. Edit Record
     window.editRec = (id) => {
-        const rec = currentData.find(r => r.id === id);
+        const rec = currentReportData.find(r => r.id === id);
         if(!rec) return;
 
         document.getElementById('editId').value = rec.id;
-        document.getElementById('inpName').value = rec.name;
-        document.getElementById('inpTravel').value = rec.travel;
-        document.getElementById('inpLeave').value = rec.leave;
+        document.getElementById('editNameDisplay').innerText = rec.name;
         
-        document.getElementById('inpTardyDays').value = rec.tardyDays;
-        document.getElementById('inpTardyMins').value = rec.tardyMins;
-        document.getElementById('inpTardyConv').value = rec.tardyConv;
-
-        document.getElementById('inpUnderDays').value = rec.underDays;
-        document.getElementById('inpUnderMins').value = rec.underMins;
-        document.getElementById('inpUnderConv').value = rec.underConv;
-
-        document.getElementById('inpTotalDays').value = rec.totalDays;
-        document.getElementById('inpTotalConv').value = rec.totalConv;
+        // Fill fields
+        ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(field => {
+            const key = field.charAt(0).toLowerCase() + field.slice(1);
+            document.getElementById(`inp${field}`).value = rec[key] || '';
+        });
 
         const modal = new bootstrap.Modal(document.getElementById('editModal'));
         modal.show();
     };
 
-    window.delRec = async (id) => {
-        if(confirm("Delete this record?")) {
-            await deleteDoc(doc(db, "monthly_reports", id));
-        }
-    };
-
     document.getElementById('btnSave').addEventListener('click', async () => {
         const id = document.getElementById('editId').value;
-        const payload = {
-            month: monthPicker.value,
-            name: document.getElementById('inpName').value,
-            travel: document.getElementById('inpTravel').value,
-            leave: document.getElementById('inpLeave').value,
-            
-            tardyDays: document.getElementById('inpTardyDays').value,
-            tardyMins: document.getElementById('inpTardyMins').value,
-            tardyConv: document.getElementById('inpTardyConv').value,
-
-            underDays: document.getElementById('inpUnderDays').value,
-            underMins: document.getElementById('inpUnderMins').value,
-            underConv: document.getElementById('inpUnderConv').value,
-
-            totalDays: document.getElementById('inpTotalDays').value,
-            totalConv: document.getElementById('inpTotalConv').value
-        };
-
-        if(id) {
-            await updateDoc(doc(db, "monthly_reports", id), payload);
-        } else {
-            await addDoc(colRef, payload);
-        }
+        const payload = {};
         
-        // Hide Modal manually
+        ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(field => {
+            const key = field.charAt(0).toLowerCase() + field.slice(1);
+            payload[key] = document.getElementById(`inp${field}`).value;
+        });
+
+        await updateDoc(doc(db, "monthly_reports", id), payload);
+        
         const modalEl = document.getElementById('editModal');
         const modal = bootstrap.Modal.getInstance(modalEl);
         modal.hide();
     });
 
-    // --- EXCEL GENERATION (THE MAGIC) ---
+    // 4. Generate Excel
     document.getElementById('btnGenerate').addEventListener('click', () => {
         const fileInput = document.getElementById('templateFile');
         if (!fileInput.files[0]) return alert("Please upload the template file first.");
@@ -370,35 +501,27 @@
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            
-            // Get all data from sheet to find row numbers
             const sheetData = XLSX.utils.sheet_to_json(sheet, {header: 1});
 
-            // Iterate over our database records
-            currentData.forEach(rec => {
-                // Find matching row in Excel (Column C / Index 2 contains Name)
+            currentReportData.forEach(rec => {
+                // Find row by Name (Column C / Index 2)
                 let rowIdx = -1;
                 for(let i=0; i < sheetData.length; i++) {
-                    // Check if name matches (loose check)
                     if(sheetData[i][2] && typeof sheetData[i][2] === 'string' && sheetData[i][2].includes(rec.name)) {
-                        rowIdx = i;
-                        break;
+                        rowIdx = i; break;
                     }
                 }
 
                 if(rowIdx !== -1) {
-                    // Helper to write to cell
                     const write = (col, val) => {
                         const cellRef = XLSX.utils.encode_cell({c: col, r: rowIdx});
                         if(!sheet[cellRef]) sheet[cellRef] = {t:'s', v:''};
                         sheet[cellRef].v = val;
                     };
 
-                    // MAP DATA TO COLUMNS (Based on your CSV analysis)
-                    // Col 3: Travel, 4: Leave, 5: TardyDays, 6: TardyMins, 7: TardyConv
-                    // 8: UnderDays, 9: UnderMins, 10: UnderConv, 11: GrandDays, 12: GrandConv
                     if(rec.travel) write(3, rec.travel);
                     if(rec.leave) write(4, rec.leave);
+                    
                     if(rec.tardyDays) write(5, Number(rec.tardyDays));
                     if(rec.tardyMins) write(6, Number(rec.tardyMins));
                     if(rec.tardyConv) write(7, Number(rec.tardyConv));
@@ -412,11 +535,10 @@
                 }
             });
 
-            // Download
-            XLSX.writeFile(workbook, `Generated_Report_${monthPicker.value}.xlsx`);
+            XLSX.writeFile(workbook, `DTR_Report_${monthPicker.value}.xlsx`);
         };
     });
-</script>
 
+</script>
 </body>
 </html>
