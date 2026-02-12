@@ -125,7 +125,6 @@
                     <div class="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm">
                         <label class="fw-bold small text-muted">Month:</label>
                         <input type="month" id="filterMonth" class="form-control form-control-sm" style="width: 160px;">
-                        
                         <button class="btn btn-outline-danger btn-sm" onclick="clearCurrentMonth()">
                             <i class="bi bi-trash3-fill"></i> Reset Month
                         </button>
@@ -190,8 +189,7 @@
                                         <th class="text-end" style="padding-right: 20px;">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody id="savedReportsBody">
-                                    </tbody>
+                                <tbody id="savedReportsBody"></tbody>
                             </table>
                         </div>
                     </div>
@@ -266,7 +264,7 @@
                         <div class="p-2 bg-light border rounded text-center">
                             <h6 class="text-warning text-dark fw-bold small">UNDERTIME</h6>
                             <input type="number" id="inpUnderDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpUnderMins" class="form-control mb-1 calc-input" placeholder="Minutes">
+                            <input type="number" id="inpUnderMins" class="form-control mb-1 calc-input" placeholder="Mins">
                             <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv" readonly>
                         </div>
                     </div>
@@ -399,10 +397,28 @@
             const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
             const batch = writeBatch(db);
             let count = 0;
-            // Scan for names in Column C (Index 2)
-            for(let i=15; i<data.length; i++) {
-                const name = data[i][2];
-                if(name && typeof name==='string' && !name.includes("Prepared") && !masterList.some(m=>m.name===name)) {
+            // SMART IMPORT: Find "NAME OF EMPLOYEE" header or default to col B/C
+            let nameColIndex = -1;
+            let startRowIndex = -1;
+
+            // Search first 20 rows for header
+            for(let r=0; r<Math.min(data.length, 20); r++) {
+                const row = data[r];
+                for(let c=0; c<row.length; c++) {
+                    if(row[c] && typeof row[c] === 'string' && row[c].toString().toUpperCase().includes("NAME OF EMPLOYEE")) {
+                        nameColIndex = c;
+                        startRowIndex = r + 1;
+                        break;
+                    }
+                }
+                if(nameColIndex !== -1) break;
+            }
+
+            if(nameColIndex === -1) { nameColIndex = 1; startRowIndex = 0; } // Fallback to col B if no header
+
+            for(let i=startRowIndex; i<data.length; i++) {
+                const name = data[i][nameColIndex];
+                if(name && typeof name==='string' && name.trim().length > 2 && !name.includes("Prepared") && !masterList.some(m=>m.name===name.trim())) {
                     batch.set(doc(employeesCol), {name: name.trim()});
                     count++;
                 }
@@ -410,18 +426,18 @@
             if(count>0) { await batch.commit(); alert(`Imported ${count} employees.`); } else { alert("No new names found."); }
         };
     };
+    
     window.deleteMaster = async(id) => { if(confirm("Remove?")) await deleteDoc(doc(db,"master_employees",id)); }
-
     window.deleteAllMaster = async () => {
-        if(masterList.length === 0) return alert("List is already empty.");
-        if(!confirm("⚠️ WARNING: This will delete ALL employees from the Master List. Are you sure?")) return;
+        if(masterList.length === 0) return alert("List is empty.");
+        if(!confirm("⚠️ Delete ALL employees?")) return;
         try {
             const snap = await getDocs(employeesCol);
             const batch = writeBatch(db);
             snap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            alert("All employees deleted.");
-        } catch(e) { alert("Error deleting: " + e.message); }
+            alert("Deleted.");
+        } catch(e) { alert("Error: " + e.message); }
     };
 
     // --- 2. MONTHLY ENCODING ---
@@ -476,23 +492,21 @@
         }
     };
 
-    // --- NEW: CLEAR CURRENT MONTH ---
     window.clearCurrentMonth = async () => {
         const m = document.getElementById('filterMonth').value;
         if(currentReportData.length === 0) return alert("Nothing to clear.");
-        if(!confirm(`⚠️ WARNING: This will delete ALL records for ${m}. Are you sure?`)) return;
-        
+        if(!confirm(`⚠️ Reset/Delete ALL records for ${m}?`)) return;
         try {
             const q = query(reportsCol, where("month", "==", m));
             const snap = await getDocs(q);
             const batch = writeBatch(db);
             snap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            alert(`Records for ${m} have been deleted.`);
-        } catch(e) { alert("Error clearing month: " + e.message); }
+            alert("Month reset.");
+        } catch(e) { alert("Error: " + e.message); }
     };
 
-    // --- 3. SAVE REPORT (To Consolidated List) ---
+    // --- 3. SAVE REPORT ---
     document.getElementById('btnSaveReport').addEventListener('click', async () => {
         const m = document.getElementById('filterMonth').value;
         if(currentReportData.length === 0) return alert("Table is empty.");
@@ -510,7 +524,7 @@
         window.showView('consolidation', document.querySelectorAll('#sidebar-wrapper .list-group-item')[2]);
     });
 
-    // --- 4. CONSOLIDATED LIST & ACTIONS ---
+    // --- 4. CONSOLIDATED LIST ---
     window.loadSavedReports = () => {
         const tbody = document.getElementById('savedReportsBody');
         tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
@@ -619,7 +633,7 @@
         XLSX.writeFile(wb, `${title}.xlsx`);
     };
 
-    // --- 5. AUTO-CALCULATION LOGIC ---
+    // --- 5. EDIT & CALC ---
     function recalc() {
         const tMins = parseFloat(document.getElementById('inpTardyMins').value) || 0;
         const uMins = parseFloat(document.getElementById('inpUnderMins').value) || 0;
