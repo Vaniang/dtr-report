@@ -125,6 +125,11 @@
                     <div class="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm">
                         <label class="fw-bold small text-muted">Month:</label>
                         <input type="month" id="filterMonth" class="form-control form-control-sm" style="width: 160px;">
+                        
+                        <button class="btn btn-outline-danger btn-sm" onclick="clearCurrentMonth()">
+                            <i class="bi bi-trash3-fill"></i> Reset Month
+                        </button>
+                        <div class="vr"></div>
                         <button class="btn btn-primary btn-sm" onclick="populateMonth()">
                             <i class="bi bi-people-fill me-1"></i> Load Employees
                         </button>
@@ -407,12 +412,9 @@
     };
     window.deleteMaster = async(id) => { if(confirm("Remove?")) await deleteDoc(doc(db,"master_employees",id)); }
 
-    // --- NEW: DELETE ALL MASTER ---
     window.deleteAllMaster = async () => {
         if(masterList.length === 0) return alert("List is already empty.");
         if(!confirm("⚠️ WARNING: This will delete ALL employees from the Master List. Are you sure?")) return;
-        if(!confirm("Double Check: This action cannot be undone. Confirm deletion?")) return;
-
         try {
             const snap = await getDocs(employeesCol);
             const batch = writeBatch(db);
@@ -472,6 +474,22 @@
             });
             await batch.commit();
         }
+    };
+
+    // --- NEW: CLEAR CURRENT MONTH ---
+    window.clearCurrentMonth = async () => {
+        const m = document.getElementById('filterMonth').value;
+        if(currentReportData.length === 0) return alert("Nothing to clear.");
+        if(!confirm(`⚠️ WARNING: This will delete ALL records for ${m}. Are you sure?`)) return;
+        
+        try {
+            const q = query(reportsCol, where("month", "==", m));
+            const snap = await getDocs(q);
+            const batch = writeBatch(db);
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert(`Records for ${m} have been deleted.`);
+        } catch(e) { alert("Error clearing month: " + e.message); }
     };
 
     // --- 3. SAVE REPORT (To Consolidated List) ---
