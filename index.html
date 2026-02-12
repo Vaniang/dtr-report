@@ -197,6 +197,10 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <h4 class="text-secondary">Master Employee List</h4>
                     <div class="d-flex gap-2">
+                        <button class="btn btn-danger btn-sm" onclick="window.deleteAllMaster()">
+                            <i class="bi bi-trash3-fill me-1"></i> Delete All
+                        </button>
+                        <div class="vr"></div>
                         <input type="file" id="masterUpload" class="form-control form-control-sm" accept=".xlsx">
                         <button class="btn btn-dark btn-sm" onclick="importMasterList()">Import from Excel</button>
                     </div>
@@ -249,7 +253,7 @@
                         <div class="p-2 bg-light border rounded text-center">
                             <h6 class="text-danger fw-bold small">TARDINESS</h6>
                             <input type="number" id="inpTardyDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpTardyMins" class="form-control mb-1 calc-input" placeholder="Minutes">
+                            <input type="number" id="inpTardyMins" class="form-control mb-1 calc-input" placeholder="Mins">
                             <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv" readonly>
                         </div>
                     </div>
@@ -403,6 +407,21 @@
     };
     window.deleteMaster = async(id) => { if(confirm("Remove?")) await deleteDoc(doc(db,"master_employees",id)); }
 
+    // --- NEW: DELETE ALL MASTER ---
+    window.deleteAllMaster = async () => {
+        if(masterList.length === 0) return alert("List is already empty.");
+        if(!confirm("⚠️ WARNING: This will delete ALL employees from the Master List. Are you sure?")) return;
+        if(!confirm("Double Check: This action cannot be undone. Confirm deletion?")) return;
+
+        try {
+            const snap = await getDocs(employeesCol);
+            const batch = writeBatch(db);
+            snap.forEach(doc => batch.delete(doc.ref));
+            await batch.commit();
+            alert("All employees deleted.");
+        } catch(e) { alert("Error deleting: " + e.message); }
+    };
+
     // --- 2. MONTHLY ENCODING ---
     const now = new Date();
     document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -463,7 +482,6 @@
         const mName = new Date(y, mNum - 1).toLocaleString('default', { month: 'long' });
         const displayName = `DTR - ${mName} ${y}`;
         
-        // Save Metadata
         await setDoc(doc(savedReportsCol, m), {
             reportId: m,
             displayName: displayName,
@@ -503,14 +521,12 @@
         });
     };
 
-    // ACTION: Edit
     window.editReport = (m) => {
         document.getElementById('filterMonth').value = m;
         document.getElementById('filterMonth').dispatchEvent(new Event('change'));
         window.showView('encoding', document.querySelectorAll('#sidebar-wrapper .list-group-item')[1]);
     };
 
-    // ACTION: Delete
     window.deleteReport = async (m) => {
         if(!confirm("Delete this report and all its data?")) return;
         const q = query(reportsCol, where("month", "==", m));
@@ -522,7 +538,6 @@
         alert("Deleted.");
     };
 
-    // ACTION: Print
     async function getData(m) {
         const q = query(reportsCol, where("month", "==", m));
         const snap = await getDocs(q);
@@ -550,7 +565,6 @@
         window.print();
     };
 
-    // ACTION: Download Excel (Exact Template)
     window.downloadExcel = async (m, title) => {
         const data = await getData(m);
         const aoa = [
@@ -561,9 +575,7 @@
             ["DAILY TIME RECORD REPORT"],
             [`For: ${title}`],
             [], [],
-            // Header Row 1
             ["NAME OF EMPLOYEE","TRAVEL","LEAVE","TARDINESS",null,null,"UNDERTIME",null,null,"GRAND TOTAL",null,"REMARKS"],
-            // Header Row 2
             [null,null,null,"No. of Days","Minutes","Conversion","No. of Days","Minutes","Conversion","No. of Days","Conversion",null]
         ];
 
@@ -579,17 +591,10 @@
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-        // Merge Headers
         ws['!merges'] = [
-            {s:{r:8,c:3},e:{r:8,c:5}}, // Tardiness
-            {s:{r:8,c:6},e:{r:8,c:8}}, // Undertime
-            {s:{r:8,c:9},e:{r:8,c:10}}, // Total
-            {s:{r:8,c:0},e:{r:9,c:0}}, // Name
-            {s:{r:8,c:1},e:{r:9,c:1}}, // Travel
-            {s:{r:8,c:2},e:{r:9,c:2}}, // Leave
-            {s:{r:8,c:11},e:{r:9,c:11}} // Remarks
+            {s:{r:8,c:3},e:{r:8,c:5}}, {s:{r:8,c:6},e:{r:8,c:8}}, {s:{r:8,c:9},e:{r:8,c:10}}, 
+            {s:{r:8,c:0},e:{r:9,c:0}}, {s:{r:8,c:1},e:{r:9,c:1}}, {s:{r:8,c:2},e:{r:9,c:2}}, {s:{r:8,c:11},e:{r:9,c:11}}
         ];
-        // Col Widths
         ws['!cols'] = [{wch:30}, {wch:15}, {wch:15}, {wch:10}, {wch:8}, {wch:10}, {wch:10}, {wch:8}, {wch:10}, {wch:10}, {wch:10}, {wch:25}];
 
         XLSX.utils.book_append_sheet(wb, ws, "DTR");
@@ -598,23 +603,17 @@
 
     // --- 5. AUTO-CALCULATION LOGIC ---
     function recalc() {
-        // 1. Get Minutes
         const tMins = parseFloat(document.getElementById('inpTardyMins').value) || 0;
         const uMins = parseFloat(document.getElementById('inpUnderMins').value) || 0;
-
-        // 2. Calculate Conversions (Mins / 60 / 8) -> (Mins / 480)
         const tConv = tMins / 480;
         const uConv = uMins / 480;
 
-        // 3. Update Conversion Fields (show value if > 0)
         document.getElementById('inpTardyConv').value = tConv > 0 ? tConv.toFixed(3) : '';
         document.getElementById('inpUnderConv').value = uConv > 0 ? uConv.toFixed(3) : '';
 
-        // 4. Get Days (Manual Input)
         const tDays = parseFloat(document.getElementById('inpTardyDays').value) || 0;
         const uDays = parseFloat(document.getElementById('inpUnderDays').value) || 0;
 
-        // 5. Update Grand Totals
         document.getElementById('inpTotalDays').value = tDays + uDays;
         document.getElementById('inpTotalConv').value = (tConv + uConv).toFixed(3);
     }
@@ -626,13 +625,10 @@
         document.getElementById('editNameDisplay').innerText = r.name;
         document.getElementById('inpRemarks').value = r.remarks||'';
         
-        // Fill basic fields
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              document.getElementById(`inp${k}`).value = r[k.charAt(0).toLowerCase()+k.slice(1)]||'';
         });
         
-        // Listeners for calculation
-        // Inputs that trigger recalculation: TardyDays, TardyMins, UnderDays, UnderMins
         const inputs = ['inpTardyDays','inpTardyMins','inpUnderDays','inpUnderMins'];
         inputs.forEach(i => {
             const el = document.getElementById(i);
