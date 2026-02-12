@@ -3,125 +3,192 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Professional DTR System</title>
+    <title>DepEd DTR Monitoring System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
     <style>
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-        .status-badge { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 6px; }
-        .status-active { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-        .status-inactive { background-color: #95a5a6; }
-        .header-bg { background: linear-gradient(135deg, #0d6efd 0%, #0a58ca 100%); color: white; padding: 40px 0; margin-bottom: 30px; }
+        body { overflow-x: hidden; background-color: #f4f6f9; }
+        /* Sidebar Styling */
+        #sidebar-wrapper {
+            min-height: 100vh;
+            margin-left: -15rem;
+            transition: margin .25s ease-out;
+            background-color: #343a40;
+            color: white;
+        }
+        #sidebar-wrapper .sidebar-heading { padding: 0.875rem 1.25rem; font-size: 1.2rem; border-bottom: 1px solid #4b545c; }
+        #sidebar-wrapper .list-group-item { background-color: #343a40; color: #c2c7d0; border: none; }
+        #sidebar-wrapper .list-group-item:hover { background-color: #495057; color: #fff; }
+        #sidebar-wrapper .list-group-item.active { background-color: #007bff; color: #fff; }
+        #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
+        .stat-card { border-left: 5px solid #007bff; }
+        .table-sm td, .table-sm th { font-size: 0.9rem; vertical-align: middle; }
     </style>
 </head>
 <body>
 
-<div class="header-bg text-center">
-    <h1 class="fw-bold">Department DTR System</h1>
-    <p class="opacity-75">Automated Attendance & Report Generation</p>
-</div>
-
-<div class="container">
-    <div class="row">
-        <div class="col-lg-4 mb-4">
-            
-            <div class="card p-3 mb-3">
-                <h6 class="text-uppercase text-muted fw-bold small">User Settings</h6>
-                <div class="mb-2">
-                    <label class="form-label small">Your Name (Must match Excel)</label>
-                    <input type="text" id="empName" class="form-control" placeholder="e.g. Aborita, Simplicio A.">
-                </div>
-                <div class="row g-2">
-                    <div class="col-6">
-                        <label class="form-label small">Work Start</label>
-                        <input type="time" id="workStart" class="form-control" value="08:00">
-                    </div>
-                    <div class="col-6">
-                        <label class="form-label small">Work End</label>
-                        <input type="time" id="workEnd" class="form-control" value="17:00">
-                    </div>
-                </div>
-            </div>
-
-            <div class="card p-4 text-center mb-3">
-                <h6 class="text-muted">Current Time</h6>
-                <h2 id="liveClock" class="fw-bold my-2">--:--:--</h2>
-                <div class="mb-3">
-                    <span id="statusDot" class="status-badge status-inactive"></span> 
-                    <span id="statusText">Ready</span>
-                </div>
-                <div class="d-grid gap-2">
-                    <button id="btnIn" class="btn btn-primary btn-lg">Time In</button>
-                    <button id="btnOut" class="btn btn-danger btn-lg" disabled>Time Out</button>
-                </div>
-                <hr>
-                <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="modal" data-bs-target="#manualLogModal">
-                    📅 Log Travel / Leave
-                </button>
-            </div>
-
-            <div class="card p-3 bg-light">
-                <h6 class="fw-bold text-primary">📑 Generate Monthly Report</h6>
-                <p class="small text-muted mb-2">Upload 'DTR 2026.xlsx' to fill data automatically.</p>
-                
-                <input type="month" id="reportMonth" class="form-control mb-2" value="2026-01">
-                <input type="file" id="templateFile" class="form-control mb-2" accept=".xlsx">
-                
-                <button id="btnGenerate" class="btn btn-success w-100">
-                    Process & Download
-                </button>
-            </div>
+<div class="d-flex" id="wrapper">
+    <div class="border-end" id="sidebar-wrapper" style="width: 240px; margin-left: 0;">
+        <div class="sidebar-heading fw-bold">DTR MONITORING</div>
+        <div class="list-group list-group-flush">
+            <a href="#" class="list-group-item list-group-item-action active" onclick="showView('dashboard', this)">
+                <i class="bi bi-speedometer2 me-2"></i> Dashboard
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="showView('encoding', this)">
+                <i class="bi bi-pencil-square me-2"></i> Report Encoding
+            </a>
+            <a href="#" class="list-group-item list-group-item-action" onclick="showView('settings', this)">
+                <i class="bi bi-gear me-2"></i> Settings
+            </a>
         </div>
+    </div>
 
-        <div class="col-lg-8">
-            <div class="card p-4">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h5 class="mb-0">Attendance History</h5>
-                    <button class="btn btn-sm btn-light text-danger" id="btnClear">Clear Local Data</button>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle">
-                        <thead class="table-light">
-                            <tr>
-                                <th>Date</th>
-                                <th>Type</th>
-                                <th>In / Out</th>
-                                <th>Tardiness</th>
-                                <th>Undertime</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tableBody">
-                            </tbody>
-                    </table>
+    <div id="page-content-wrapper" class="w-100">
+        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-3">
+            <button class="btn btn-outline-secondary btn-sm" id="menu-toggle"><i class="bi bi-list"></i></button>
+            <div class="ms-auto fw-bold text-primary">Region I - San Fernando City</div>
+        </nav>
+
+        <div class="container-fluid p-4">
+            
+            <div id="view-dashboard">
+                <h3 class="mb-4">Dashboard Overview</h3>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <div class="card shadow-sm stat-card p-3">
+                            <h6 class="text-muted">Total Employees</h6>
+                            <h2 id="dash-total">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm stat-card p-3" style="border-color: #dc3545;">
+                            <h6 class="text-muted">Total Tardiness (Mins)</h6>
+                            <h2 id="dash-tardy">0</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="card shadow-sm stat-card p-3" style="border-color: #ffc107;">
+                            <h6 class="text-muted">With Travel/Leave</h6>
+                            <h2 id="dash-leaves">0</h2>
+                        </div>
+                    </div>
                 </div>
             </div>
+
+            <div id="view-encoding" class="d-none">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3>Monthly Report Encoding</h3>
+                    <div class="d-flex gap-2">
+                         <input type="month" id="filterMonth" class="form-control" value="2026-01">
+                         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#editModal" onclick="resetForm()">
+                            <i class="bi bi-plus-lg"></i> Add New
+                         </button>
+                    </div>
+                </div>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-bordered table-hover table-sm">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th rowspan="2" style="vertical-align: middle;">Name of Employee</th>
+                                        <th rowspan="2" style="vertical-align: middle;">Travel</th>
+                                        <th rowspan="2" style="vertical-align: middle;">Leave</th>
+                                        <th colspan="3">Tardiness</th>
+                                        <th colspan="3">Undertime</th>
+                                        <th colspan="2">Grand Total</th>
+                                        <th rowspan="2" style="vertical-align: middle;">Action</th>
+                                    </tr>
+                                    <tr style="font-size: 0.8rem;">
+                                        <th>Days</th><th>Mins</th><th>Conv</th>
+                                        <th>Days</th><th>Mins</th><th>Conv</th>
+                                        <th>Days</th><th>Conv</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="reportTableBody">
+                                    </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card mt-4 bg-light border-0">
+                    <div class="card-body">
+                        <h5 class="card-title"><i class="bi bi-file-earmark-spreadsheet"></i> Generate Excel Report</h5>
+                        <p class="text-muted small">Upload your 'DTR 2026.xlsx' template. The system will match names and fill the data.</p>
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <input type="file" id="templateFile" class="form-control" accept=".xlsx">
+                            </div>
+                            <div class="col-md-2">
+                                <button class="btn btn-success w-100" id="btnGenerate">Generate</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+             <div id="view-settings" class="d-none">
+                <h3>Settings</h3>
+                <p>System configuration...</p>
+            </div>
+
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="manualLogModal" tabindex="-1">
-    <div class="modal-dialog">
+<div class="modal fade" id="editModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Log Special Attendance</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Edit Employee Record</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
+                <input type="hidden" id="editId">
+                
                 <div class="mb-3">
-                    <label>Date</label>
-                    <input type="date" id="manualDate" class="form-control">
+                    <label class="fw-bold">Employee Name</label>
+                    <input type="text" id="inpName" class="form-control" placeholder="Lastname, Firstname M.">
                 </div>
-                <div class="mb-3">
-                    <label>Type</label>
-                    <select id="manualType" class="form-select">
-                        <option value="Travel">Official Travel</option>
-                        <option value="Leave">Leave of Absence</option>
-                    </select>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label>Travel (Dates)</label>
+                        <input type="text" id="inpTravel" class="form-control" placeholder="e.g. 6-9, 14-15">
+                    </div>
+                    <div class="col-md-6">
+                        <label>Leave (Dates)</label>
+                        <input type="text" id="inpLeave" class="form-control" placeholder="e.g. 29-30">
+                    </div>
+                </div>
+
+                <div class="row g-3">
+                    <div class="col-md-4 p-2 bg-light border rounded">
+                        <h6 class="text-danger">Tardiness</h6>
+                        <input type="number" id="inpTardyDays" class="form-control mb-1" placeholder="Days">
+                        <input type="number" id="inpTardyMins" class="form-control mb-1" placeholder="Mins">
+                        <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv">
+                    </div>
+                    <div class="col-md-4 p-2 bg-light border rounded">
+                        <h6 class="text-warning text-dark">Undertime</h6>
+                        <input type="number" id="inpUnderDays" class="form-control mb-1" placeholder="Days">
+                        <input type="number" id="inpUnderMins" class="form-control mb-1" placeholder="Mins">
+                        <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv">
+                    </div>
+                    <div class="col-md-4 p-2 bg-light border rounded">
+                        <h6 class="text-success">Grand Total</h6>
+                        <input type="number" id="inpTotalDays" class="form-control mb-1" placeholder="Total Days">
+                        <input type="number" id="inpTotalConv" class="form-control" placeholder="Total Conv">
+                    </div>
                 </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-primary" id="btnSaveManual">Save Record</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-primary" id="btnSave">Save Record</button>
             </div>
         </div>
     </div>
@@ -130,7 +197,7 @@
 <script type="module">
     // --- FIREBASE SETUP ---
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, doc, query, orderBy, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyAaU2vOGHM4ugJXGhFLmrAJdXi1bPr8wig",
@@ -144,282 +211,210 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const logsCol = collection(db, "attendance_logs_v2");
+    const colRef = collection(db, "monthly_reports");
 
-    // --- STATE & UI ---
-    let currentDocId = null;
-    let allRecords = []; // Holds fetched data
+    let currentData = [];
 
-    // Restore Name from LocalStorage
-    document.getElementById('empName').value = localStorage.getItem('dtr_emp_name') || '';
-    document.getElementById('empName').addEventListener('change', (e) => localStorage.setItem('dtr_emp_name', e.target.value));
-
-    // Live Clock
-    setInterval(() => {
-        document.getElementById('liveClock').innerText = new Date().toLocaleTimeString();
-    }, 1000);
-
-    // --- ATTENDANCE ACTIONS ---
-
-    // 1. Time In
-    document.getElementById('btnIn').addEventListener('click', async () => {
-        const now = new Date();
-        const workStartVal = document.getElementById('workStart').value; // "08:00"
+    // --- VIEW CONTROLLER ---
+    window.showView = (viewName, link) => {
+        document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(el => el.classList.remove('active'));
+        if(link) link.classList.add('active');
         
-        // Calculate Tardiness
-        let tardiness = 0;
-        const [startH, startM] = workStartVal.split(':');
-        const workStartDate = new Date(now);
-        workStartDate.setHours(startH, startM, 0);
-        
-        if (now > workStartDate) {
-            const diffMs = now - workStartDate;
-            tardiness = Math.floor(diffMs / 60000); // Minutes
-        }
+        ['dashboard', 'encoding', 'settings'].forEach(v => {
+            document.getElementById(`view-${v}`).classList.add('d-none');
+        });
+        document.getElementById(`view-${viewName}`).classList.remove('d-none');
+    };
 
-        try {
-            await addDoc(logsCol, {
-                type: 'Regular',
-                dateStr: now.toLocaleDateString('en-CA'), // YYYY-MM-DD for sorting
-                timeIn: serverTimestamp(),
-                timeOut: null,
-                tardiness: tardiness,
-                undertime: 0,
-                status: 'active',
-                empName: document.getElementById('empName').value
-            });
-        } catch (e) { alert("Error: " + e.message); }
+    // Sidebar Toggle
+    document.getElementById("menu-toggle").addEventListener("click", function(e) {
+        e.preventDefault();
+        document.getElementById("wrapper").classList.toggle("toggled");
     });
 
-    // 2. Time Out
-    document.getElementById('btnOut').addEventListener('click', async () => {
-        if (!currentDocId) return;
-        const now = new Date();
-        const workEndVal = document.getElementById('workEnd').value; // "17:00"
-
-        // Calculate Undertime
-        let undertime = 0;
-        const [endH, endM] = workEndVal.split(':');
-        const workEndDate = new Date(now);
-        workEndDate.setHours(endH, endM, 0);
-
-        if (now < workEndDate) {
-            const diffMs = workEndDate - now;
-            undertime = Math.floor(diffMs / 60000);
-        }
-
-        try {
-            const ref = doc(db, "attendance_logs_v2", currentDocId);
-            await updateDoc(ref, {
-                timeOut: serverTimestamp(),
-                undertime: undertime,
-                status: 'completed'
-            });
-            currentDocId = null;
-        } catch (e) { alert("Error: " + e.message); }
-    });
-
-    // 3. Manual Log (Travel/Leave)
-    document.getElementById('btnSaveManual').addEventListener('click', async () => {
-        const dateVal = document.getElementById('manualDate').value;
-        const typeVal = document.getElementById('manualType').value;
-        if (!dateVal) return alert("Pick a date");
-
-        try {
-            await addDoc(logsCol, {
-                type: typeVal,
-                dateStr: dateVal,
-                timeIn: null, 
-                timeOut: null,
-                tardiness: 0,
-                undertime: 0,
-                status: 'completed',
-                empName: document.getElementById('empName').value
-            });
-            alert("Saved!");
-            // Close Modal (Manual trigger)
-            const modalEl = document.getElementById('manualLogModal');
-            const modal = bootstrap.Modal.getInstance(modalEl);
-            modal.hide();
-        } catch(e) { alert(e.message); }
-    });
-
-    // --- REALTIME LISTENER ---
-    const q = query(logsCol, orderBy("dateStr", "desc"));
+    // --- DATA LOADING ---
+    const monthPicker = document.getElementById('filterMonth');
     
-    onSnapshot(q, (snapshot) => {
-        const tbody = document.getElementById('tableBody');
-        tbody.innerHTML = '';
-        allRecords = [];
-        currentDocId = null;
+    function loadData() {
+        const selectedMonth = monthPicker.value;
+        const q = query(colRef, where("month", "==", selectedMonth));
 
-        snapshot.forEach((doc) => {
-            const data = doc.data();
-            data.id = doc.id;
-            allRecords.push(data);
-
-            // Check if this is TODAY's active session
-            const isToday = data.dateStr === new Date().toLocaleDateString('en-CA');
-            if (data.status === 'active' && data.type === 'Regular' && isToday) {
-                currentDocId = data.id;
-            }
-
-            // UI Render
-            let timeStr = "";
-            let badgeClass = "bg-secondary";
+        onSnapshot(q, (snapshot) => {
+            const tbody = document.getElementById('reportTableBody');
+            tbody.innerHTML = '';
+            currentData = [];
             
-            if(data.type === 'Regular') {
-                const inTime = data.timeIn ? data.timeIn.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '-';
-                const outTime = data.timeOut ? data.timeOut.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...';
-                timeStr = `${inTime} - ${outTime}`;
-                badgeClass = "bg-primary";
-            } else if (data.type === 'Travel') {
-                timeStr = "Official Business";
-                badgeClass = "bg-info text-dark";
-            } else {
-                timeStr = "Authorized Absence";
-                badgeClass = "bg-warning text-dark";
-            }
+            // Dashboard Stats
+            let totalMins = 0;
+            let withIssues = 0;
 
-            const row = `
-                <tr>
-                    <td>${data.dateStr}</td>
-                    <td><span class="badge ${badgeClass}">${data.type}</span></td>
-                    <td>${timeStr}</td>
-                    <td class="text-danger">${data.tardiness > 0 ? data.tardiness + ' min' : '-'}</td>
-                    <td class="text-danger">${data.undertime > 0 ? data.undertime + ' min' : '-'}</td>
-                </tr>
-            `;
-            tbody.innerHTML += row;
+            snapshot.forEach(docSnap => {
+                const data = docSnap.data();
+                data.id = docSnap.id;
+                currentData.push(data);
+
+                // Stats
+                totalMins += Number(data.tardyMins || 0);
+                if(data.travel || data.leave) withIssues++;
+
+                const row = `
+                    <tr>
+                        <td class="fw-bold">${data.name}</td>
+                        <td>${data.travel || ''}</td>
+                        <td>${data.leave || ''}</td>
+                        <td class="text-center">${data.tardyDays || ''}</td>
+                        <td class="text-center">${data.tardyMins || ''}</td>
+                        <td class="text-center">${data.tardyConv || ''}</td>
+                        <td class="text-center">${data.underDays || ''}</td>
+                        <td class="text-center">${data.underMins || ''}</td>
+                        <td class="text-center">${data.underConv || ''}</td>
+                        <td class="text-center fw-bold">${data.totalDays || ''}</td>
+                        <td class="text-center fw-bold">${data.totalConv || ''}</td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-primary" onclick="window.editRec('${data.id}')"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="window.delRec('${data.id}')"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+
+            // Update Dashboard
+            document.getElementById('dash-total').innerText = currentData.length;
+            document.getElementById('dash-tardy').innerText = totalMins;
+            document.getElementById('dash-leaves').innerText = withIssues;
         });
+    }
 
-        // Update Buttons
-        const btnIn = document.getElementById('btnIn');
-        const btnOut = document.getElementById('btnOut');
-        const statusDot = document.getElementById('statusDot');
+    monthPicker.addEventListener('change', loadData);
+    loadData(); // Initial Load
+
+    // --- CRUD OPERATIONS ---
+
+    window.resetForm = () => {
+        document.getElementById('editId').value = '';
+        document.querySelectorAll('#editModal input').forEach(i => i.value = '');
+    };
+
+    window.editRec = (id) => {
+        const rec = currentData.find(r => r.id === id);
+        if(!rec) return;
+
+        document.getElementById('editId').value = rec.id;
+        document.getElementById('inpName').value = rec.name;
+        document.getElementById('inpTravel').value = rec.travel;
+        document.getElementById('inpLeave').value = rec.leave;
         
-        if (currentDocId) {
-            btnIn.disabled = true;
-            btnOut.disabled = false;
-            statusDot.classList.add('status-active');
-            statusDot.classList.remove('status-inactive');
-            document.getElementById('statusText').innerText = "Clocked In";
-        } else {
-            btnIn.disabled = false;
-            btnOut.disabled = true;
-            statusDot.classList.remove('status-active');
-            statusDot.classList.add('status-inactive');
-            document.getElementById('statusText').innerText = "Clocked Out";
+        document.getElementById('inpTardyDays').value = rec.tardyDays;
+        document.getElementById('inpTardyMins').value = rec.tardyMins;
+        document.getElementById('inpTardyConv').value = rec.tardyConv;
+
+        document.getElementById('inpUnderDays').value = rec.underDays;
+        document.getElementById('inpUnderMins').value = rec.underMins;
+        document.getElementById('inpUnderConv').value = rec.underConv;
+
+        document.getElementById('inpTotalDays').value = rec.totalDays;
+        document.getElementById('inpTotalConv').value = rec.totalConv;
+
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
+        modal.show();
+    };
+
+    window.delRec = async (id) => {
+        if(confirm("Delete this record?")) {
+            await deleteDoc(doc(db, "monthly_reports", id));
         }
-    });
+    };
 
-    // --- REPORT GENERATION (THE MAGIC PART) ---
-    document.getElementById('btnGenerate').addEventListener('click', async () => {
-        const fileInput = document.getElementById('templateFile');
-        const nameFilter = document.getElementById('empName').value.trim();
-        const monthFilter = document.getElementById('reportMonth').value; // "2026-01"
-
-        if (!fileInput.files[0]) return alert("Please upload the DTR 2026.xlsx template first!");
-        if (!nameFilter) return alert("Please enter your name exactly as it appears in the Excel.");
-
-        // 1. Filter Data for Month & Name
-        const monthlyLogs = allRecords.filter(r => 
-            r.dateStr.startsWith(monthFilter) && 
-            (!r.empName || r.empName.includes(nameFilter) || true) // Relaxed filter for demo
-        );
-
-        // 2. Aggregate Data
-        let travelDays = [];
-        let leaveDays = [];
-        let totalTardiness = 0;
-        let totalUndertime = 0;
-
-        monthlyLogs.forEach(log => {
-            const day = parseInt(log.dateStr.split('-')[2]); // Get day number (1-31)
+    document.getElementById('btnSave').addEventListener('click', async () => {
+        const id = document.getElementById('editId').value;
+        const payload = {
+            month: monthPicker.value,
+            name: document.getElementById('inpName').value,
+            travel: document.getElementById('inpTravel').value,
+            leave: document.getElementById('inpLeave').value,
             
-            if (log.type === 'Travel') travelDays.push(day);
-            if (log.type === 'Leave') leaveDays.push(day);
-            if (log.type === 'Regular') {
-                totalTardiness += (log.tardiness || 0);
-                totalUndertime += (log.undertime || 0);
-            }
-        });
+            tardyDays: document.getElementById('inpTardyDays').value,
+            tardyMins: document.getElementById('inpTardyMins').value,
+            tardyConv: document.getElementById('inpTardyConv').value,
 
-        // Helper: Format [1, 2, 3, 5] -> "1-3, 5"
-        const formatRanges = (nums) => {
-            if (nums.length === 0) return "";
-            nums.sort((a,b) => a-b);
-            let ranges = [], start = nums[0], prev = nums[0];
-            for (let i = 1; i < nums.length; i++) {
-                if (nums[i] !== prev + 1) {
-                    ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
-                    start = nums[i];
-                }
-                prev = nums[i];
-            }
-            ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
-            return ranges.join(", ");
+            underDays: document.getElementById('inpUnderDays').value,
+            underMins: document.getElementById('inpUnderMins').value,
+            underConv: document.getElementById('inpUnderConv').value,
+
+            totalDays: document.getElementById('inpTotalDays').value,
+            totalConv: document.getElementById('inpTotalConv').value
         };
 
-        const travelStr = formatRanges(travelDays);
-        const leaveStr = formatRanges(leaveDays);
+        if(id) {
+            await updateDoc(doc(db, "monthly_reports", id), payload);
+        } else {
+            await addDoc(colRef, payload);
+        }
+        
+        // Hide Modal manually
+        const modalEl = document.getElementById('editModal');
+        const modal = bootstrap.Modal.getInstance(modalEl);
+        modal.hide();
+    });
 
-        // 3. Process Excel
+    // --- EXCEL GENERATION (THE MAGIC) ---
+    document.getElementById('btnGenerate').addEventListener('click', () => {
+        const fileInput = document.getElementById('templateFile');
+        if (!fileInput.files[0]) return alert("Please upload the template file first.");
+        
         const reader = new FileReader();
         reader.readAsArrayBuffer(fileInput.files[0]);
-        
+
         reader.onload = function(e) {
             const data = new Uint8Array(e.target.result);
             const workbook = XLSX.read(data, {type: 'array'});
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-
-            // Convert sheet to JSON to find row index
-            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
             
-            // Search for Name (Column Index 2 / "C")
-            let targetRow = -1;
-            for (let i = 0; i < jsonData.length; i++) {
-                const row = jsonData[i];
-                if (row[2] && row[2].toString().toLowerCase().includes(nameFilter.toLowerCase())) {
-                    targetRow = i; // Found the row index (0-based)
-                    break;
+            // Get all data from sheet to find row numbers
+            const sheetData = XLSX.utils.sheet_to_json(sheet, {header: 1});
+
+            // Iterate over our database records
+            currentData.forEach(rec => {
+                // Find matching row in Excel (Column C / Index 2 contains Name)
+                let rowIdx = -1;
+                for(let i=0; i < sheetData.length; i++) {
+                    // Check if name matches (loose check)
+                    if(sheetData[i][2] && typeof sheetData[i][2] === 'string' && sheetData[i][2].includes(rec.name)) {
+                        rowIdx = i;
+                        break;
+                    }
                 }
-            }
 
-            if (targetRow === -1) {
-                alert(`Name "${nameFilter}" not found in the uploaded Excel template.`);
-                return;
-            }
+                if(rowIdx !== -1) {
+                    // Helper to write to cell
+                    const write = (col, val) => {
+                        const cellRef = XLSX.utils.encode_cell({c: col, r: rowIdx});
+                        if(!sheet[cellRef]) sheet[cellRef] = {t:'s', v:''};
+                        sheet[cellRef].v = val;
+                    };
 
-            // Update Cells (Row is 0-based, so +1 for Excel reference usually, but utils use address)
-            // Function to safe write
-            const setCell = (c, r, val) => {
-                const cellRef = XLSX.utils.encode_cell({c: c, r: r});
-                if(!worksheet[cellRef]) worksheet[cellRef] = {t:'s', v:''};
-                worksheet[cellRef].v = val;
-            };
-
-            // Mapping based on your provided CSV:
-            // Name: Col 2 (C)
-            // Travel: Col 3 (D)
-            // Leave: Col 4 (E)
-            // Tardiness Mins: Col 6 (G)
-            // Undertime Mins: Col 9 (J)
-            
-            setCell(3, targetRow, travelStr);      // Travel
-            setCell(4, targetRow, leaveStr);       // Leave
-            setCell(6, targetRow, totalTardiness); // Tardiness
-            setCell(9, targetRow, totalUndertime); // Undertime
+                    // MAP DATA TO COLUMNS (Based on your CSV analysis)
+                    // Col 3: Travel, 4: Leave, 5: TardyDays, 6: TardyMins, 7: TardyConv
+                    // 8: UnderDays, 9: UnderMins, 10: UnderConv, 11: GrandDays, 12: GrandConv
+                    if(rec.travel) write(3, rec.travel);
+                    if(rec.leave) write(4, rec.leave);
+                    if(rec.tardyDays) write(5, Number(rec.tardyDays));
+                    if(rec.tardyMins) write(6, Number(rec.tardyMins));
+                    if(rec.tardyConv) write(7, Number(rec.tardyConv));
+                    
+                    if(rec.underDays) write(8, Number(rec.underDays));
+                    if(rec.underMins) write(9, Number(rec.underMins));
+                    if(rec.underConv) write(10, Number(rec.underConv));
+                    
+                    if(rec.totalDays) write(11, Number(rec.totalDays));
+                    if(rec.totalConv) write(12, Number(rec.totalConv));
+                }
+            });
 
             // Download
-            XLSX.writeFile(workbook, `DTR_Report_${nameFilter}_${monthFilter}.xlsx`);
+            XLSX.writeFile(workbook, `Generated_Report_${monthPicker.value}.xlsx`);
         };
-    });
-
-    document.getElementById('btnClear').addEventListener('click', () => {
-       // Optional: Clear Firestore? Usually restricted.
-       alert("Contact Admin to clear database records.");
     });
 </script>
 
