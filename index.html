@@ -827,7 +827,15 @@
         const wb = XLSX.utils.book_new();
         const ws = XLSX.utils.aoa_to_sheet(aoa);
 
-        ws['!merges'] = [
+       ws['!merges'] = [
+            // --- NEW: Center the main titles across all 12 columns (columns 0 through 11) ---
+            {s:{r:0,c:0}, e:{r:0,c:11}}, // DEPARTMENT OF EDUCATION
+            {s:{r:1,c:0}, e:{r:1,c:11}}, // Region I
+            {s:{r:2,c:0}, e:{r:2,c:11}}, // San Fernando City...
+            {s:{r:4,c:0}, e:{r:4,c:11}}, // DAILY TIME RECORD REPORT
+            {s:{r:5,c:0}, e:{r:5,c:11}}, // For: ...
+
+            // --- Existing merges for the data table headers ---
             {s:{r:8,c:3},e:{r:8,c:5}}, {s:{r:8,c:6},e:{r:8,c:8}}, {s:{r:8,c:9},e:{r:8,c:10}}, 
             {s:{r:8,c:0},e:{r:9,c:0}}, {s:{r:8,c:1},e:{r:9,c:1}}, {s:{r:8,c:2},e:{r:9,c:2}}, {s:{r:8,c:11},e:{r:9,c:11}}
         ];
