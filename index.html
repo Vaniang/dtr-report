@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
         body { overflow-x: hidden; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
@@ -43,12 +44,12 @@
         .table-custom td { font-size: 0.85rem; vertical-align: middle; }
         .calc-input:focus { border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
 
-        /* PRINT STYLES */
-        #print-area { display: none; }
+        /* PRINT STYLES - MODIFIED FOR MULTIPLE PRINT VIEWS */
+        .print-section { display: none; }
         @media print {
             body * { visibility: hidden; }
-            #print-area, #print-area * { visibility: visible; }
-            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .active-print, .active-print * { visibility: visible; }
+            .active-print { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; display: block !important; }
             
             .print-header { text-align: center; margin-bottom: 20px; font-family: "Times New Roman", serif; }
             .print-header h4 { margin: 0; font-weight: bold; font-size: 16px; }
@@ -117,12 +118,28 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="card shadow-sm border-0 stat-card">
+                            <div class="card-body">
+                                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-line me-2"></i> Current Month: Tardiness & Undertime Analytics</h6>
+                                <canvas id="analyticsChart" style="max-height: 350px;"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="view-encoding" class="d-none">
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <h4 class="text-secondary mb-0">Monthly Encoding</h4>
                     <div class="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm">
+                        <button class="btn btn-warning btn-sm fw-bold" onclick="window.openBatchModal()">
+                            <i class="bi bi-collection"></i> Batch Update
+                        </button>
+                        <div class="vr"></div>
+
                         <label class="fw-bold small text-muted">Month:</label>
                         <input type="month" id="filterMonth" class="form-control form-control-sm" style="width: 160px;">
                         <button class="btn btn-outline-danger btn-sm" onclick="clearCurrentMonth()">
@@ -141,6 +158,9 @@
                             <table class="table table-bordered table-sm table-hover table-custom mb-0">
                                 <thead class="text-center sticky-top shadow-sm bg-light">
                                     <tr>
+                                        <th rowspan="2" class="bg-light align-middle" style="width: 30px;">
+                                            <input type="checkbox" id="checkAll" class="form-check-input" onclick="window.toggleAll(this)">
+                                        </th>
                                         <th rowspan="2" class="bg-light col-name">NAME OF EMPLOYEE</th>
                                         <th rowspan="2" class="bg-light">TRAVEL</th>
                                         <th rowspan="2" class="bg-light">LEAVE</th>
@@ -289,7 +309,37 @@
     </div>
 </div>
 
-<div id="print-area">
+<div class="modal fade" id="batchModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-collection me-2"></i>Batch Update Selected</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted small">Enter values below to apply them to all selected employees. Leave fields blank if you do not want to update them.</p>
+                <div class="mb-3">
+                    <label class="small fw-bold">Apply Travel Dates</label>
+                    <input type="text" id="batchTravel" class="form-control" placeholder="e.g., Nov 10-12">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Apply Leave Dates</label>
+                    <input type="text" id="batchLeave" class="form-control" placeholder="e.g., Sick Leave Nov 5">
+                </div>
+                <div class="mb-3">
+                    <label class="small fw-bold">Apply Remarks</label>
+                    <input type="text" id="batchRemarks" class="form-control" placeholder="e.g., Holiday">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-warning fw-bold" onclick="window.executeBatchUpdate()">Apply to Selected</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="print-area" class="print-section">
     <div class="print-header">
         <h4>DEPARTMENT OF EDUCATION</h4>
         <h5>Region I</h5>
@@ -309,14 +359,9 @@
                 <th rowspan="2" style="width: 15%;">REMARKS</th>
             </tr>
             <tr>
-                <th>No. of Days</th>
-                <th>Minutes</th>
-                <th>Conversion</th>
-                <th>No. of Days</th>
-                <th>Minutes</th>
-                <th>Conversion</th>
-                <th>No. of Days</th>
-                <th>Conversion</th>
+                <th>No. of Days</th><th>Minutes</th><th>Conversion</th>
+                <th>No. of Days</th><th>Minutes</th><th>Conversion</th>
+                <th>No. of Days</th><th>Conversion</th>
             </tr>
         </thead>
         <tbody id="print-table-body"></tbody>
@@ -332,6 +377,34 @@
             <p>Approved:</p>
             <div class="signatory-line"></div>
             <p><strong>Schools Division Superintendent</strong></p>
+        </div>
+    </div>
+</div>
+
+<div id="print-summary-area" class="print-section">
+    <div class="print-header">
+        <h4>DEPARTMENT OF EDUCATION</h4>
+        <h5>Region I - San Fernando City (La Union)</h5>
+        <br>
+        <h4 id="print-summary-title">Summary of Tardiness & Undertime</h4>
+    </div>
+    <table class="table-print">
+        <thead>
+            <tr>
+                <th style="width: 30%;">NAME OF EMPLOYEE</th>
+                <th style="width: 15%;">TARDINESS (Days/Mins)</th>
+                <th style="width: 15%;">UNDERTIME (Days/Mins)</th>
+                <th style="width: 20%;">TOTAL (Days / Conv)</th>
+                <th style="width: 20%;">REMARKS</th>
+            </tr>
+        </thead>
+        <tbody id="print-summary-body"></tbody>
+    </table>
+    <div class="print-footer">
+        <div class="signatory-box" style="width: 100%; text-align: left; margin-top: 20px;">
+            <p>Prepared by:</p>
+            <div class="signatory-line" style="width: 250px; margin: 30px 0 5px 0;"></div>
+            <p><strong>HR Personnel</strong></p>
         </div>
     </div>
 </div>
@@ -362,6 +435,7 @@
     let currentReportData = [];
     let masterList = [];
     let monthListenerUnsubscribe = null;
+    let analyticsChartInstance = null; // NEW: Chart reference
 
     // --- NAVIGATION ---
     window.showView = (viewName, link) => {
@@ -397,11 +471,9 @@
             const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
             const batch = writeBatch(db);
             let count = 0;
-            // SMART IMPORT: Find "NAME OF EMPLOYEE" header or default to col B/C
             let nameColIndex = -1;
             let startRowIndex = -1;
 
-            // Search first 20 rows for header
             for(let r=0; r<Math.min(data.length, 20); r++) {
                 const row = data[r];
                 for(let c=0; c<row.length; c++) {
@@ -414,7 +486,7 @@
                 if(nameColIndex !== -1) break;
             }
 
-            if(nameColIndex === -1) { nameColIndex = 1; startRowIndex = 0; } // Fallback to col B if no header
+            if(nameColIndex === -1) { nameColIndex = 1; startRowIndex = 0; } 
 
             for(let i=startRowIndex; i<data.length; i++) {
                 const name = data[i][nameColIndex];
@@ -440,6 +512,41 @@
         } catch(e) { alert("Error: " + e.message); }
     };
 
+    // --- NEW: Dashboard Analytics Chart ---
+    function updateAnalyticsChart(data) {
+        const ctx = document.getElementById('analyticsChart');
+        if (!ctx) return;
+        if (analyticsChartInstance) analyticsChartInstance.destroy();
+
+        // Filter employees who have recorded tardiness or undertime
+        const filteredData = data.filter(d => (parseFloat(d.tardyMins) > 0 || parseFloat(d.underMins) > 0));
+        
+        const labels = filteredData.map(d => d.name.substring(0, 15) + "..."); // Truncate long names
+        const tardyData = filteredData.map(d => parseFloat(d.tardyMins) || 0);
+        const underData = filteredData.map(d => parseFloat(d.underMins) || 0);
+
+        analyticsChartInstance = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    { label: 'Tardiness (Mins)', data: tardyData, backgroundColor: '#dc3545', borderRadius: 4 },
+                    { label: 'Undertime (Mins)', data: underData, backgroundColor: '#ffc107', borderRadius: 4 }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: { beginAtZero: true, title: { display: true, text: 'Minutes' } }
+                },
+                plugins: {
+                    legend: { position: 'top' }
+                }
+            }
+        });
+    }
+
     // --- 2. MONTHLY ENCODING ---
     const now = new Date();
     document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -453,15 +560,26 @@
             currentReportData = [];
             const tbody = document.getElementById('reportTableBody');
             tbody.innerHTML = '';
+            
+            // Reset "Check All" box
+            const checkAllBox = document.getElementById('checkAll');
+            if(checkAllBox) checkAllBox.checked = false;
+
             snap.forEach(d => { const data = d.data(); data.id = d.id; currentReportData.push(data); });
             currentReportData.sort((a,b) => a.name.localeCompare(b.name));
             
+            // UPDATE CHART EVERY TIME DATA CHANGES
+            updateAnalyticsChart(currentReportData);
+            
             if(currentReportData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="13" class="text-center py-3 text-muted">No data. Click "Load Employees".</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="14" class="text-center py-3 text-muted">No data. Click "Load Employees".</td></tr>';
             } else {
                 currentReportData.forEach(d => {
                     tbody.innerHTML += `
                         <tr>
+                            <td class="text-center align-middle">
+                                <input type="checkbox" class="form-check-input row-check" value="${d.id}">
+                            </td>
                             <td class="fw-bold text-start">${d.name}</td>
                             <td>${d.travel||''}</td><td>${d.leave||''}</td>
                             <td>${d.tardyDays||''}</td><td>${d.tardyMins||''}</td><td>${d.tardyConv||''}</td>
@@ -476,6 +594,51 @@
     }
     document.getElementById('filterMonth').addEventListener('change', (e) => loadMonthData(e.target.value));
     loadMonthData();
+
+    // --- NEW: BATCH UPDATE LOGIC ---
+    window.toggleAll = (source) => {
+        document.querySelectorAll('.row-check').forEach(chk => chk.checked = source.checked);
+    };
+
+    window.openBatchModal = () => {
+        const selected = document.querySelectorAll('.row-check:checked');
+        if(selected.length === 0) return alert("Please select at least one employee using the checkboxes on the left.");
+        
+        document.getElementById('batchTravel').value = "";
+        document.getElementById('batchLeave').value = "";
+        document.getElementById('batchRemarks').value = "";
+        
+        new bootstrap.Modal(document.getElementById('batchModal')).show();
+    };
+
+    window.executeBatchUpdate = async () => {
+        const selected = document.querySelectorAll('.row-check:checked');
+        const batchTravel = document.getElementById('batchTravel').value.trim();
+        const batchLeave = document.getElementById('batchLeave').value.trim();
+        const batchRemarks = document.getElementById('batchRemarks').value.trim();
+
+        if(!batchTravel && !batchLeave && !batchRemarks) return alert("Please enter at least one value to update.");
+
+        const batch = writeBatch(db);
+        let payload = {};
+        if(batchTravel) payload.travel = batchTravel;
+        if(batchLeave) payload.leave = batchLeave;
+        if(batchRemarks) payload.remarks = batchRemarks;
+
+        selected.forEach(chk => {
+            const ref = doc(reportsCol, chk.value);
+            batch.update(ref, payload);
+        });
+
+        try {
+            await batch.commit();
+            bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();
+            document.getElementById('checkAll').checked = false; // reset UI
+            alert(`Successfully updated ${selected.length} records.`);
+        } catch(e) {
+            alert("Error in batch update: " + e.message);
+        }
+    };
 
     window.populateMonth = async () => {
         const m = document.getElementById('filterMonth').value;
@@ -541,10 +704,11 @@
                         <td>${data.month}</td>
                         <td class="small text-muted">${dateSavedStr}</td>
                         <td class="text-end">
-                            <button class="btn btn-sm btn-outline-dark me-1" onclick="window.printReport('${data.month}', '${data.displayName}')" title="Print"><i class="bi bi-printer"></i></button>
-                            <button class="btn btn-sm btn-outline-success me-1" onclick="window.downloadExcel('${data.month}', '${data.displayName}')" title="Excel"><i class="bi bi-file-earmark-excel"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="window.editReport('${data.month}')" title="Edit"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteReport('${data.month}')" title="Delete"><i class="bi bi-trash"></i></button>
+                            <button class="btn btn-sm btn-outline-dark me-1" onclick="window.printReport('${data.month}', '${data.displayName}')" title="Print Master DTR"><i class="bi bi-printer"></i></button>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="window.printSummary('${data.month}', '${data.displayName}')" title="Print Summary of Late/Undertime"><i class="bi bi-clock-history"></i></button>
+                            <button class="btn btn-sm btn-outline-success me-1" onclick="window.downloadExcel('${data.month}', '${data.displayName}')" title="Export Excel"><i class="bi bi-file-earmark-excel"></i></button>
+                            <button class="btn btn-sm btn-outline-primary me-1" onclick="window.editReport('${data.month}')" title="Edit Month"><i class="bi bi-pencil-square"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteReport('${data.month}')" title="Delete Report"><i class="bi bi-trash"></i></button>
                         </td>
                     </tr>`;
             });
@@ -578,6 +742,7 @@
         return arr.sort((a,b) => a.name.localeCompare(b.name));
     }
 
+    // Standard Full Print
     window.printReport = async (m, title) => {
         const data = await getData(m);
         document.getElementById('print-title').innerText = title.toUpperCase();
@@ -594,7 +759,44 @@
                     <td class="text-start" style="font-style:italic">${r.remarks}</td>
                 </tr>`;
         });
+        
+        // Trigger specific print area
+        document.getElementById('print-area').classList.add('active-print');
         window.print();
+        setTimeout(() => document.getElementById('print-area').classList.remove('active-print'), 500);
+    };
+
+    // --- NEW: SUMMARY PRINT LOGIC ---
+    window.printSummary = async (m, title) => {
+        const data = await getData(m);
+        document.getElementById('print-summary-title').innerText = "SUMMARY OF TARDINESS & UNDERTIME - " + title.toUpperCase();
+        const tbody = document.getElementById('print-summary-body');
+        tbody.innerHTML = '';
+        
+        // Filter out people with perfect attendance
+        const filtered = data.filter(r => (parseFloat(r.tardyMins)>0 || parseFloat(r.tardyDays)>0 || parseFloat(r.underMins)>0 || parseFloat(r.underDays)>0));
+
+        if(filtered.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No tardiness or undertime recorded for this month.</td></tr>';
+        } else {
+            filtered.forEach(r => {
+                const tStr = `${r.tardyDays ? r.tardyDays + 'd ' : ''}${r.tardyMins ? r.tardyMins + 'm' : ''}`;
+                const uStr = `${r.underDays ? r.underDays + 'd ' : ''}${r.underMins ? r.underMins + 'm' : ''}`;
+                tbody.innerHTML += `
+                    <tr>
+                        <td class="text-start" style="padding-left:5px; font-weight:bold;">${r.name}</td>
+                        <td>${tStr || '-'}</td>
+                        <td>${uStr || '-'}</td>
+                        <td style="font-weight:bold; background-color:#f8f9fa;">${r.totalDays || 0} days / ${r.totalConv || 0}</td>
+                        <td class="text-start" style="font-style:italic">${r.remarks || ''}</td>
+                    </tr>`;
+            });
+        }
+        
+        // Trigger specific print area
+        document.getElementById('print-summary-area').classList.add('active-print');
+        window.print();
+        setTimeout(() => document.getElementById('print-summary-area').classList.remove('active-print'), 500);
     };
 
     window.downloadExcel = async (m, title) => {
