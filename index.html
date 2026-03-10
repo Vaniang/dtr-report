@@ -456,12 +456,21 @@
         masterList = [];
         const tbody = document.getElementById('masterTableBody');
         tbody.innerHTML = '';
-        snap.forEach(d => {
-            const data = d.data(); data.id = d.id; masterList.push(data);
-            tbody.innerHTML += `<tr><td>${masterList.length}</td><td class="fw-bold">${data.name}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger" onclick="window.deleteMaster('${data.id}')"><i class="bi bi-trash"></i></button></td></tr>`;
-        });
-        document.getElementById('dash-master-count').innerText = masterList.length;
-    });
+       // Update the table row generation inside the Master List onSnapshot:
+snap.forEach(d => {
+    const data = d.data(); data.id = d.id; masterList.push(data);
+    const safeName = data.name.replace(/'/g, "\\'"); // Protect against names with apostrophes (e.g., O'Connor)
+    
+    tbody.innerHTML += `<tr>
+        <td>${masterList.length}</td>
+        <td class="fw-bold">${data.name}</td>
+        <td class="text-end">
+            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteMaster('${data.id}', '${safeName}')">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>`;
+});
 
     window.importMasterList = () => {
         const fileIn = document.getElementById('masterUpload');
@@ -501,18 +510,29 @@
         };
     };
     
-    window.deleteMaster = async(id) => { if(confirm("Remove?")) await deleteDoc(doc(db,"master_employees",id)); }
-    window.deleteAllMaster = async () => {
-        if(masterList.length === 0) return alert("List is empty.");
-        if(!confirm("⚠️ Delete ALL employees?")) return;
-        try {
-            const snap = await getDocs(employeesCol);
+   // Replace your current window.deleteMaster with this:
+window.deleteMaster = async(id, name) => { 
+    if(!confirm(`Are you sure you want to completely remove ${name}? This will delete them from the Master List AND erase all their past monthly records.`)) return;
+    
+    try {
+        // 1. Delete from the Master Employee List
+        await deleteDoc(doc(db, "master_employees", id));
+        
+        // 2. Find and delete all monthly DTR records for this employee
+        const q = query(reportsCol, where("name", "==", name));
+        const snap = await getDocs(q);
+        
+        if (!snap.empty) {
             const batch = writeBatch(db);
             snap.forEach(doc => batch.delete(doc.ref));
             await batch.commit();
-            alert("Deleted.");
-        } catch(e) { alert("Error: " + e.message); }
-    };
+        }
+        
+        alert(`${name} has been successfully removed from the system.`);
+    } catch(e) { 
+        alert("Error deleting employee: " + e.message); 
+    } 
+};
 
     // --- NEW: Dashboard Analytics Chart ---
     function updateAnalyticsChart(data) {
@@ -577,25 +597,40 @@
                 tbody.innerHTML = '<tr><td colspan="14" class="text-center py-3 text-muted">No data. Click "Load Employees".</td></tr>';
             } else {
                 currentReportData.forEach(d => {
-                    tbody.innerHTML += `
-                        <tr>
-                            <td class="text-center align-middle">
-                                <input type="checkbox" class="form-check-input row-check" value="${d.id}">
-                            </td>
-                            <td class="fw-bold text-start">${d.name}</td>
-                            <td>${d.travel||''}</td><td>${d.leave||''}</td>
-                            <td>${d.tardyDays||''}</td><td>${d.tardyMins||''}</td><td>${d.tardyConv||''}</td>
-                            <td>${d.underDays||''}</td><td>${d.underMins||''}</td><td>${d.underConv||''}</td>
-                            <td class="bg-success-subtle fw-bold">${d.totalDays||''}</td><td class="bg-success-subtle fw-bold">${d.totalConv||''}</td>
-                            <td class="text-start small fst-italic text-muted">${d.remarks||''}</td>
-                            <td><button class="btn btn-sm btn-light border" onclick="window.editRec('${d.id}')"><i class="bi bi-pencil"></i></button></td>
-                        </tr>`;
+                    const safeName = d.name.replace(/'/g, "\\'"); // Protect against apostrophes
+                 tbody.innerHTML += `
+                    <tr>
+                        <td class="text-center align-middle">
+                            <input type="checkbox" class="form-check-input row-check" value="${d.id}">
+                        </td>
+                        <td class="fw-bold text-start">${d.name}</td>
+                        <td>${d.travel||''}</td><td>${d.leave||''}</td>
+                        <td>${d.tardyDays||''}</td><td>${d.tardyMins||''}</td><td>${d.tardyConv||''}</td>
+                        <td>${d.underDays||''}</td><td>${d.underMins||''}</td><td>${d.underConv||''}</td>
+                        <td class="bg-success-subtle fw-bold">${d.totalDays||''}</td><td class="bg-success-subtle fw-bold">${d.totalConv||''}</td>
+                        <td class="text-start small fst-italic text-muted">${d.remarks||''}</td>
+                        <td style="white-space: nowrap;">
+                            <button class="btn btn-sm btn-light border me-1" onclick="window.editRec('${d.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteReportRecord('${d.id}', '${safeName}')" title="Remove from this month"><i class="bi bi-trash"></i></button>
+                        </td>
+                    </tr>`;
                 });
             }
         });
     }
     document.getElementById('filterMonth').addEventListener('change', (e) => loadMonthData(e.target.value));
     loadMonthData();
+
+        // NEW FUNCTION: Delete a specific employee from the current month's encoding
+window.deleteReportRecord = async (id, name) => {
+    if(confirm(`Are you sure you want to remove ${name} from this month's encoding?`)) {
+        try {
+            await deleteDoc(doc(reportsCol, id));
+        } catch(e) {
+            alert("Error removing record: " + e.message);
+        }
+    }
+};
 
     // --- NEW: BATCH UPDATE LOGIC ---
     window.toggleAll = (source) => {
