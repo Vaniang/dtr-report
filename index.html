@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DepEd DTR System (Official)</title>
+    <title>DepEd DTR Monitoring & Report System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -226,7 +226,7 @@
                             <i class="bi bi-trash3-fill me-1"></i> Delete All
                         </button>
                         <div class="vr"></div>
-                        <input type="file" id="masterUpload" class="form-control form-control-sm" accept=".xlsx">
+                        <input type="file" id="masterUpload" class="form-control form-control-sm" accept=".xlsx,.xls,.xlsm">
                         <button class="btn btn-dark btn-sm" onclick="importMasterList()">Import from Excel</button>
                     </div>
                 </div>
@@ -411,6 +411,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
 <script type="module">
@@ -437,7 +438,8 @@
     let currentReportData = [];
     let masterList = [];
     let monthListenerUnsubscribe = null;
-    let analyticsChartInstance = null; // NEW: Chart reference
+    let analyticsChartInstance = null;
+    let savedReportsListenerUnsubscribe = null;
 
     // --- NAVIGATION ---
     window.showView = (viewName, link) => {
@@ -456,62 +458,106 @@
         masterList = [];
         const tbody = document.getElementById('masterTableBody');
         tbody.innerHTML = '';
-       // Update the table row generation inside the Master List onSnapshot:
-snap.forEach(d => {
-    const data = d.data(); data.id = d.id; masterList.push(data);
-    const safeName = data.name.replace(/'/g, "\\'"); // Protect against names with apostrophes (e.g., O'Connor)
-    
-    tbody.innerHTML += `<tr>
-        <td>${masterList.length}</td>
-        <td class="fw-bold">${data.name}</td>
-        <td class="text-end">
-            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteMaster('${data.id}', '${safeName}')">
-                <i class="bi bi-trash"></i>
-            </button>
-        </td>
-    </tr>`;
-});
+
+        snap.forEach(d => {
+            const data = d.data();
+            data.id = d.id;
+            masterList.push(data);
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${masterList.length}</td>
+                <td class="fw-bold"></td>
+                <td class="text-end">
+                    <button class="btn btn-sm btn-outline-danger" title="Delete employee">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </td>`;
+            tr.children[1].textContent = data.name || '';
+            tr.querySelector('button').addEventListener('click', () => window.deleteMaster(data.id, data.name));
+            tbody.appendChild(tr);
+        });
+
+        document.getElementById('dash-master-count').innerText = masterList.length;
+        if(masterList.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No employees yet. Import an Excel master list.</td></tr>';
+        }
+    }, (error) => {
+        console.error('Master employee listener error:', error);
+        document.getElementById('masterTableBody').innerHTML = `<tr><td colspan="3" class="text-center text-danger py-3">Unable to load employees: ${error.message}</td></tr>`;
+    });
 
     window.importMasterList = () => {
         const fileIn = document.getElementById('masterUpload');
-        if(!fileIn.files[0]) return alert("Select file first.");
+        if(!fileIn.files[0]) return alert("Select an Excel file first.");
+
         const reader = new FileReader();
         reader.readAsArrayBuffer(fileIn.files[0]);
         reader.onload = async (e) => {
-            const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-            const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1});
-            const batch = writeBatch(db);
-            let count = 0;
-            let nameColIndex = -1;
-            let startRowIndex = -1;
+            try {
+                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
+                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, defval: ''});
+                let nameColIndex = -1;
+                let startRowIndex = -1;
 
-            for(let r=0; r<Math.min(data.length, 20); r++) {
-                const row = data[r];
-                for(let c=0; c<row.length; c++) {
-                    if(row[c] && typeof row[c] === 'string' && row[c].toString().toUpperCase().includes("NAME OF EMPLOYEE")) {
-                        nameColIndex = c;
-                        startRowIndex = r + 1;
-                        break;
+                for(let r = 0; r < Math.min(data.length, 30); r++) {
+                    const row = data[r] || [];
+                    for(let c = 0; c < row.length; c++) {
+                        const value = String(row[c] ?? '').trim().toUpperCase();
+                        if(value.includes('NAME OF EMPLOYEE') || value === 'EMPLOYEE NAME' || value === 'NAME') {
+                            nameColIndex = c;
+                            startRowIndex = r + 1;
+                            break;
+                        }
+                    }
+                    if(nameColIndex !== -1) break;
+                }
+
+                // Fallback: use the first non-empty column if no header was found.
+                if(nameColIndex === -1) {
+                    for(let c = 0; c < Math.max(...data.map(r => (r || []).length), 1); c++) {
+                        if(data.some(r => String((r || [])[c] ?? '').trim().length > 2)) {
+                            nameColIndex = c;
+                            startRowIndex = 0;
+                            break;
+                        }
                     }
                 }
-                if(nameColIndex !== -1) break;
-            }
 
-            if(nameColIndex === -1) { nameColIndex = 1; startRowIndex = 0; } 
+                if(nameColIndex === -1) return alert('No employee-name column was found in the selected file.');
 
-            for(let i=startRowIndex; i<data.length; i++) {
-                const name = data[i][nameColIndex];
-                if(name && typeof name==='string' && name.trim().length > 2 && !name.includes("Prepared") && !masterList.some(m=>m.name===name.trim())) {
-                    batch.set(doc(employeesCol), {name: name.trim()});
-                    count++;
+                const existing = new Set(masterList.map(m => (m.name || '').trim().toLowerCase()));
+                const names = [];
+                for(let i = startRowIndex; i < data.length; i++) {
+                    const raw = String((data[i] || [])[nameColIndex] ?? '').trim();
+                    const lower = raw.toLowerCase();
+                    if(!raw || raw.length < 3) continue;
+                    if(/prepared by|approved by|certified|signature|name of employee/i.test(raw)) continue;
+                    if(existing.has(lower) || names.some(n => n.toLowerCase() === lower)) continue;
+                    names.push(raw);
                 }
+
+                if(names.length === 0) return alert('No new employee names were found.');
+
+                // Firestore batches allow up to 500 writes. Use conservative chunks.
+                for(let i = 0; i < names.length; i += 450) {
+                    const batch = writeBatch(db);
+                    names.slice(i, i + 450).forEach(name => batch.set(doc(employeesCol), {name}));
+                    await batch.commit();
+                }
+
+                fileIn.value = '';
+                alert(`Imported ${names.length} employee${names.length === 1 ? '' : 's'}.`);
+            } catch(err) {
+                console.error(err);
+                alert('Unable to import the Excel file: ' + err.message);
             }
-            if(count>0) { await batch.commit(); alert(`Imported ${count} employees.`); } else { alert("No new names found."); }
         };
+        reader.onerror = () => alert('Unable to read the selected file.');
     };
-    
-   // Replace your current window.deleteMaster with this:
-window.deleteMaster = async(id, name) => { 
+
+    // Delete one employee from the master list and all monthly records bearing the same name.
+    window.deleteMaster = async(id, name) => { 
     if(!confirm(`Are you sure you want to completely remove ${name}? This will delete them from the Master List AND erase all their past monthly records.`)) return;
     
     try {
@@ -533,6 +579,30 @@ window.deleteMaster = async(id, name) => {
         alert("Error deleting employee: " + e.message); 
     } 
 };
+
+
+    window.deleteAllMaster = async () => {
+        if(masterList.length === 0) return alert('The Master Employee List is already empty.');
+        if(!confirm(`Delete ALL ${masterList.length} employees and ALL of their monthly DTR records? This cannot be undone.`)) return;
+
+        try {
+            const [empSnap, reportSnap, savedSnap] = await Promise.all([getDocs(employeesCol), getDocs(reportsCol), getDocs(savedReportsCol)]);
+            const refs = [
+                ...empSnap.docs.map(d => d.ref),
+                ...reportSnap.docs.map(d => d.ref),
+                ...savedSnap.docs.map(d => d.ref)
+            ];
+            for(let i = 0; i < refs.length; i += 450) {
+                const batch = writeBatch(db);
+                refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
+                await batch.commit();
+            }
+            alert('All employees, monthly DTR records, and saved report entries were deleted.');
+        } catch(e) {
+            console.error(e);
+            alert('Error deleting the master list: ' + e.message);
+        }
+    };
 
     // --- NEW: Dashboard Analytics Chart ---
     function updateAnalyticsChart(data) {
@@ -620,6 +690,11 @@ window.deleteMaster = async(id, name) => {
     }
     document.getElementById('filterMonth').addEventListener('change', (e) => loadMonthData(e.target.value));
     loadMonthData();
+
+    // Initialize dashboard saved-report count without requiring the user to open Consolidated Reports.
+    getDocs(savedReportsCol).then(snap => {
+        document.getElementById('dash-saved-count').innerText = snap.size;
+    }).catch(err => console.error('Saved report count error:', err));
 
         // NEW FUNCTION: Delete a specific employee from the current month's encoding
 window.deleteReportRecord = async (id, name) => {
@@ -728,7 +803,8 @@ window.deleteReportRecord = async (id, name) => {
     window.loadSavedReports = () => {
         const tbody = document.getElementById('savedReportsBody');
         tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
-        onSnapshot(query(savedReportsCol, orderBy("month", "desc")), (snap) => {
+        if(savedReportsListenerUnsubscribe) savedReportsListenerUnsubscribe();
+        savedReportsListenerUnsubscribe = onSnapshot(query(savedReportsCol, orderBy("month", "desc")), (snap) => {
             tbody.innerHTML = '';
             let count = 0;
             snap.forEach(d => {
@@ -789,11 +865,11 @@ window.deleteReportRecord = async (id, name) => {
             tbody.innerHTML += `
                 <tr>
                     <td class="text-start" style="padding-left:5px">${r.name}</td>
-                    <td>${r.travel}</td><td>${r.leave}</td>
-                    <td>${r.tardyDays}</td><td>${r.tardyMins}</td><td>${r.tardyConv}</td>
-                    <td>${r.underDays}</td><td>${r.underMins}</td><td>${r.underConv}</td>
-                    <td style="font-weight:bold">${r.totalDays}</td><td style="font-weight:bold">${r.totalConv}</td>
-                    <td class="text-start" style="font-style:italic">${r.remarks}</td>
+                    <td>${r.travel || ''}</td><td>${r.leave || ''}</td>
+                    <td>${r.tardyDays || ''}</td><td>${r.tardyMins || ''}</td><td>${r.tardyConv || ''}</td>
+                    <td>${r.underDays || ''}</td><td>${r.underMins || ''}</td><td>${r.underConv || ''}</td>
+                    <td style="font-weight:bold">${r.totalDays || ''}</td><td style="font-weight:bold">${r.totalConv || ''}</td>
+                    <td class="text-start" style="font-style:italic">${r.remarks || ''}</td>
                 </tr>`;
         });
         
@@ -931,8 +1007,10 @@ window.deleteReportRecord = async (id, name) => {
         const tDays = parseFloat(document.getElementById('inpTardyDays').value) || 0;
         const uDays = parseFloat(document.getElementById('inpUnderDays').value) || 0;
 
-        document.getElementById('inpTotalDays').value = tDays + uDays;
-        document.getElementById('inpTotalConv').value = (tConv + uConv).toFixed(3);
+        const totalDays = tDays + uDays;
+        const totalConv = tConv + uConv;
+        document.getElementById('inpTotalDays').value = totalDays > 0 ? totalDays : '';
+        document.getElementById('inpTotalConv').value = totalConv > 0 ? totalConv.toFixed(3) : '';
     }
 
     window.editRec = (id) => {
@@ -962,8 +1040,14 @@ window.deleteReportRecord = async (id, name) => {
         ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
              payload[k.charAt(0).toLowerCase()+k.slice(1)] = document.getElementById(`inp${k}`).value;
         });
-        await updateDoc(doc(reportsCol, id), payload);
-        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        try {
+            await updateDoc(doc(reportsCol, id), payload);
+            const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
+            if(modal) modal.hide();
+        } catch(e) {
+            console.error(e);
+            alert('Unable to save this DTR entry: ' + e.message);
+        }
     });
 
 </script>
