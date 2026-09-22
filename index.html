@@ -1,1054 +1,813 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DepEd DTR Monitoring & Report System</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>School HR Monitoring System</title>
 
-    <style>
-        body { overflow-x: hidden; background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        
-        /* Sidebar Styles */
-        #sidebar-wrapper {
-            min-height: 100vh;
-            margin-left: -17rem;
-            transition: margin .25s ease-out;
-            background-color: #212529;
-            color: white;
-            width: 17rem;
-            position: fixed;
-            z-index: 1000;
-        }
-        #sidebar-wrapper .sidebar-heading { padding: 1.5rem 1.2rem; font-size: 1.1rem; border-bottom: 1px solid #343a40; background: #1a1e21; letter-spacing: 1px; }
-        #sidebar-wrapper .list-group-item { background-color: transparent; color: #adb5bd; border: none; padding: 14px 25px; transition: all 0.2s; }
-        #sidebar-wrapper .list-group-item:hover { background-color: #343a40; color: #fff; padding-left: 30px; }
-        #sidebar-wrapper .list-group-item.active { background-color: #0d6efd; color: #fff; border-right: 4px solid #fff; font-weight: 600; }
-        
-        #page-content-wrapper { width: 100%; margin-left: 0; transition: margin .25s ease-out; padding-left: 0; }
-        #wrapper.toggled #sidebar-wrapper { margin-left: 0; }
-        #wrapper.toggled #page-content-wrapper { margin-left: 17rem; }
-        
-        @media (min-width: 768px) {
-            #sidebar-wrapper { margin-left: 0; }
-            #page-content-wrapper { margin-left: 17rem; }
-            #wrapper.toggled #sidebar-wrapper { margin-left: -17rem; }
-            #wrapper.toggled #page-content-wrapper { margin-left: 0; }
-        }
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
 
-        .stat-card { border: none; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .table-custom th { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; vertical-align: middle; text-align: center; }
-        .table-custom td { font-size: 0.85rem; vertical-align: middle; }
-        .calc-input:focus { border-color: #198754; box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25); }
-
-       /* PRINT STYLES - FIXED */
-        .print-section { display: none; }
-        @media print {
-            /* Hide the main app wrapper and any open modals */
-            #wrapper, .modal, .modal-backdrop { display: none !important; } 
-            
-            /* Only display the active print area */
-            .print-section.active-print { display: block !important; width: 100%; position: static; padding: 0; }
-            
-            .print-header { text-align: center; margin-bottom: 20px; font-family: "Times New Roman", serif; }
-            .print-header h4 { margin: 0; font-weight: bold; font-size: 16px; }
-            .print-header h5 { margin: 0; font-size: 14px; }
-            
-            .table-print { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 11px; }
-            .table-print th, .table-print td { border: 1px solid black; padding: 4px; }
-            .table-print th { text-align: center; background-color: #f0f0f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-            .table-print td { vertical-align: middle; }
-            .text-center { text-align: center; }
-            
-            .print-footer { margin-top: 40px; width: 100%; font-family: Arial, sans-serif; }
-            .signatory-box { display: inline-block; width: 45%; vertical-align: top; text-align: center; }
-            .signatory-line { border-bottom: 1px solid black; width: 80%; margin: 30px auto 5px auto; }
-            
-            @page { size: landscape; margin: 10mm; }
-        }
-    </style>
+<style>
+:root{
+  --sidebar:#1f2937;
+  --sidebar2:#111827;
+  --primary:#2563eb;
+  --bg:#f3f6fb;
+}
+body{margin:0;background:var(--bg);font-family:Segoe UI,Tahoma,sans-serif;color:#1f2937;overflow-x:hidden}
+#sidebar{position:fixed;left:0;top:0;bottom:0;width:270px;background:var(--sidebar);color:#fff;z-index:1000;overflow-y:auto;transition:.25s}
+#sidebar .brand{padding:22px 20px;background:var(--sidebar2);font-weight:700;letter-spacing:.5px}
+#sidebar .section-label{font-size:.68rem;text-transform:uppercase;color:#94a3b8;padding:18px 20px 6px}
+#sidebar a{display:flex;align-items:center;gap:10px;color:#cbd5e1;text-decoration:none;padding:11px 20px;border-left:4px solid transparent}
+#sidebar a:hover,#sidebar a.active{background:#374151;color:#fff;border-left-color:#60a5fa}
+#content{margin-left:270px;min-height:100vh;transition:.25s}
+body.sidebar-hidden #sidebar{left:-270px}
+body.sidebar-hidden #content{margin-left:0}
+.topbar{background:#fff;border-bottom:1px solid #e5e7eb;position:sticky;top:0;z-index:900;padding:12px 18px}
+.stat-card{border:0;border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.stat-icon{width:44px;height:44px;border-radius:12px;display:grid;place-items:center;font-size:1.25rem}
+.card{border:0;border-radius:14px}
+.table thead th{font-size:.75rem;text-transform:uppercase;white-space:nowrap}
+.table td{font-size:.87rem;vertical-align:middle}
+.table-responsive{border-radius:12px}
+.view{display:none}
+.view.active{display:block}
+.badge-soft{background:#eef2ff;color:#3730a3}
+.alert-list .list-group-item{border-left:0;border-right:0}
+.form-label{font-weight:600;font-size:.86rem}
+.small-muted{font-size:.78rem;color:#6b7280}
+@media(max-width:991px){
+  #sidebar{left:-270px}
+  #content{margin-left:0}
+  body.sidebar-open #sidebar{left:0}
+}
+@media print{
+  #sidebar,.topbar,.no-print,.modal,.modal-backdrop{display:none!important}
+  #content{margin:0!important}
+  .view{display:none!important}
+  .print-area{display:block!important}
+  @page{size:landscape;margin:10mm}
+}
+.print-area{display:none}
+</style>
 </head>
 <body>
 
-<div class="d-flex" id="wrapper">
-    <div class="border-end" id="sidebar-wrapper">
-        <div class="sidebar-heading fw-bold"><i class="bi bi-building-check me-2"></i> HR MONITORING</div>
-        <div class="list-group list-group-flush mt-3">
-            <a href="#" class="list-group-item list-group-item-action active" onclick="showView('dashboard', this)">
-                <i class="bi bi-grid-1x2 me-2"></i> Dashboard
-            </a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="showView('encoding', this)">
-                <i class="bi bi-pencil-square me-2"></i> Monthly Encoding
-            </a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="showView('consolidation', this)">
-                <i class="bi bi-folder-fill me-2"></i> Consolidated Reports
-            </a>
-            <a href="#" class="list-group-item list-group-item-action" onclick="showView('employees', this)">
-                <i class="bi bi-people me-2"></i> Master Employee List
-            </a>
-        </div>
+<aside id="sidebar">
+  <div class="brand"><i class="bi bi-people-fill me-2"></i> SCHOOL HR MONITORING</div>
+
+  <div class="section-label">Overview</div>
+  <a href="#" class="nav-link active" data-view="dashboard"><i class="bi bi-grid-1x2-fill"></i> Dashboard</a>
+
+  <div class="section-label">Personnel</div>
+  <a href="#" class="nav-link" data-view="employees"><i class="bi bi-person-vcard-fill"></i> Employee Masterlist</a>
+  <a href="#" class="nav-link" data-view="files201"><i class="bi bi-folder-check"></i> 201 File Monitoring</a>
+
+  <div class="section-label">Attendance</div>
+  <a href="#" class="nav-link" data-view="dtr"><i class="bi bi-clock-history"></i> DTR / Attendance</a>
+  <a href="#" class="nav-link" data-view="consolidated"><i class="bi bi-folder2-open"></i> Consolidated DTR</a>
+  <a href="#" class="nav-link" data-view="leave"><i class="bi bi-calendar2-check"></i> Leave Management</a>
+
+  <div class="section-label">Development</div>
+  <a href="#" class="nav-link" data-view="training"><i class="bi bi-mortarboard-fill"></i> Training / L&D</a>
+  <a href="#" class="nav-link" data-view="performance"><i class="bi bi-star-fill"></i> Performance</a>
+
+  <div class="section-label">Reporting</div>
+  <a href="#" class="nav-link" data-view="reports"><i class="bi bi-bar-chart-fill"></i> HR Reports</a>
+</aside>
+
+<main id="content">
+  <div class="topbar d-flex align-items-center justify-content-between">
+    <div class="d-flex align-items-center gap-3">
+      <button class="btn btn-outline-secondary btn-sm" id="menuBtn"><i class="bi bi-list"></i></button>
+      <div>
+        <div class="fw-bold">School Human Resource Monitoring System</div>
+        <div class="small-muted">GitHub Pages + Firebase Firestore</div>
+      </div>
     </div>
+    <span class="badge text-bg-primary" id="liveBadge">Connected</span>
+  </div>
 
-    <div id="page-content-wrapper">
-        <nav class="navbar navbar-expand-lg navbar-light bg-white border-bottom px-4 py-3 shadow-sm sticky-top">
-            <button class="btn btn-outline-dark btn-sm me-3" id="menu-toggle"><i class="bi bi-list"></i></button>
-            <div class="fw-bold text-dark fs-5">Region I - San Fernando City (La Union)</div>
-        </nav>
+  <div class="container-fluid p-3 p-lg-4">
 
-        <div class="container-fluid p-4">
-            
-            <div id="view-dashboard">
-                <h4 class="mb-4 text-secondary">Dashboard Overview</h4>
-                <div class="row g-4">
-                    <div class="col-md-4">
-                        <div class="card stat-card bg-primary text-white h-100">
-                            <div class="card-body">
-                                <h6 class="opacity-75">Total Employees</h6>
-                                <h2 class="fw-bold display-6" id="dash-master-count">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="card stat-card bg-success text-white h-100">
-                            <div class="card-body">
-                                <h6 class="opacity-75">Saved Reports</h6>
-                                <h2 class="fw-bold display-6" id="dash-saved-count">0</h2>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+    <!-- DASHBOARD -->
+    <section id="view-dashboard" class="view active">
+      <div class="d-flex justify-content-between align-items-center mb-4">
+        <div><h4 class="mb-1">Dashboard</h4><div class="small-muted">School personnel monitoring overview</div></div>
+      </div>
 
-                <div class="row mt-4">
-                    <div class="col-12">
-                        <div class="card shadow-sm border-0 stat-card">
-                            <div class="card-body">
-                                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-line me-2"></i> Current Month: Tardiness & Undertime Analytics</h6>
-                                <canvas id="analyticsChart" style="max-height: 350px;"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-encoding" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-3">
-                    <h4 class="text-secondary mb-0">Monthly Encoding</h4>
-                    <div class="d-flex align-items-center gap-2 bg-white p-2 rounded shadow-sm">
-                        <button class="btn btn-warning btn-sm fw-bold" onclick="window.openBatchModal()">
-                            <i class="bi bi-collection"></i> Batch Update
-                        </button>
-                        <div class="vr"></div>
-
-                        <label class="fw-bold small text-muted">Month:</label>
-                        <input type="month" id="filterMonth" class="form-control form-control-sm" style="width: 160px;">
-                        <button class="btn btn-outline-danger btn-sm" onclick="clearCurrentMonth()">
-                            <i class="bi bi-trash3-fill"></i> Reset Month
-                        </button>
-                        <div class="vr"></div>
-                        <button class="btn btn-primary btn-sm" onclick="populateMonth()">
-                            <i class="bi bi-people-fill me-1"></i> Load Employees
-                        </button>
-                    </div>
-                </div>
-
-                <div class="card shadow-sm border-0 mb-4">
-                    <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 60vh;">
-                            <table class="table table-bordered table-sm table-hover table-custom mb-0">
-                                <thead class="text-center sticky-top shadow-sm bg-light">
-                                    <tr>
-                                        <th rowspan="2" class="bg-light align-middle" style="width: 30px;">
-                                            <input type="checkbox" id="checkAll" class="form-check-input" onclick="window.toggleAll(this)">
-                                        </th>
-                                        <th rowspan="2" class="bg-light col-name">NAME OF EMPLOYEE</th>
-                                        <th rowspan="2" class="bg-light">TRAVEL</th>
-                                        <th rowspan="2" class="bg-light">LEAVE</th>
-                                        <th colspan="3" class="bg-light text-danger">TARDINESS</th>
-                                        <th colspan="3" class="bg-light text-warning">UNDERTIME</th>
-                                        <th colspan="2" class="bg-light text-success">GRAND TOTAL</th>
-                                        <th rowspan="2" class="bg-light">REMARKS</th>
-                                        <th rowspan="2" class="bg-light">Action</th>
-                                    </tr>
-                                    <tr class="bg-light">
-                                        <th>Days</th><th>Mins</th><th>Conv</th>
-                                        <th>Days</th><th>Mins</th><th>Conv</th>
-                                        <th>Days</th><th>Conv</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="reportTableBody" class="bg-white"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                    <button class="btn btn-success btn-lg shadow" id="btnSaveReport">
-                        <i class="bi bi-floppy2-fill me-2"></i> SAVE REPORT
-                    </button>
-                </div>
-            </div>
-
-            <div id="view-consolidation" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="text-secondary">Consolidated Reports</h4>
-                    <button class="btn btn-dark btn-sm" onclick="loadSavedReports()">
-                        <i class="bi bi-arrow-clockwise me-1"></i> Refresh
-                    </button>
-                </div>
-                
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-0">
-                        <div class="table-responsive">
-                            <table class="table table-hover align-middle mb-0">
-                                <thead class="table-light">
-                                    <tr>
-                                        <th style="padding-left: 20px;">Report Name</th>
-                                        <th>Month Key</th>
-                                        <th>Last Saved</th>
-                                        <th class="text-end" style="padding-right: 20px;">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="savedReportsBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div id="view-employees" class="d-none">
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h4 class="text-secondary">Master Employee List</h4>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-danger btn-sm" onclick="window.deleteAllMaster()">
-                            <i class="bi bi-trash3-fill me-1"></i> Delete All
-                        </button>
-                        <div class="vr"></div>
-                        <input type="file" id="masterUpload" class="form-control form-control-sm" accept=".xlsx,.xls,.xlsm">
-                        <button class="btn btn-dark btn-sm" onclick="importMasterList()">Import from Excel</button>
-                    </div>
-                </div>
-                <div class="card shadow-sm border-0">
-                    <div class="card-body p-0">
-                        <div class="table-responsive" style="max-height: 70vh;">
-                            <table class="table table-hover mb-0">
-                                <thead class="table-light sticky-top">
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Name (A-Z)</th>
-                                        <th class="text-end">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="masterTableBody"></tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div class="row g-3">
+        <div class="col-6 col-xl-3">
+          <div class="card stat-card h-100"><div class="card-body d-flex justify-content-between">
+            <div><div class="text-muted small">Total Personnel</div><div class="fs-2 fw-bold" id="statTotal">0</div></div>
+            <div class="stat-icon bg-primary-subtle text-primary"><i class="bi bi-people-fill"></i></div>
+          </div></div>
         </div>
-    </div>
+        <div class="col-6 col-xl-3">
+          <div class="card stat-card h-100"><div class="card-body d-flex justify-content-between">
+            <div><div class="text-muted small">Teaching</div><div class="fs-2 fw-bold" id="statTeaching">0</div></div>
+            <div class="stat-icon bg-success-subtle text-success"><i class="bi bi-person-workspace"></i></div>
+          </div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="card stat-card h-100"><div class="card-body d-flex justify-content-between">
+            <div><div class="text-muted small">Non-Teaching</div><div class="fs-2 fw-bold" id="statNonTeaching">0</div></div>
+            <div class="stat-icon bg-warning-subtle text-warning"><i class="bi bi-briefcase-fill"></i></div>
+          </div></div>
+        </div>
+        <div class="col-6 col-xl-3">
+          <div class="card stat-card h-100"><div class="card-body d-flex justify-content-between">
+            <div><div class="text-muted small">Inactive</div><div class="fs-2 fw-bold" id="statInactive">0</div></div>
+            <div class="stat-icon bg-secondary-subtle text-secondary"><i class="bi bi-person-x-fill"></i></div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-lg-8">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold mb-3">Current Month Tardiness & Undertime</div>
+              <canvas id="attendanceChart" height="110"></canvas>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="card shadow-sm h-100">
+            <div class="card-body">
+              <div class="fw-bold mb-3">HR Alerts</div>
+              <div class="list-group list-group-flush alert-list">
+                <div class="list-group-item px-0 d-flex justify-content-between"><span>Pending Leave</span><span class="badge text-bg-warning" id="alertLeave">0</span></div>
+                <div class="list-group-item px-0 d-flex justify-content-between"><span>Incomplete 201 Files</span><span class="badge text-bg-danger" id="alert201">0</span></div>
+                <div class="list-group-item px-0 d-flex justify-content-between"><span>DTR Records This Month</span><span class="badge text-bg-primary" id="alertDtr">0</span></div>
+                <div class="list-group-item px-0 d-flex justify-content-between"><span>Trainings Recorded</span><span class="badge text-bg-success" id="alertTraining">0</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- EMPLOYEES -->
+    <section id="view-employees" class="view">
+      <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+        <div><h4 class="mb-1">Employee Masterlist</h4><div class="small-muted">Central employee database used by all HR modules</div></div>
+        <div class="d-flex flex-wrap gap-2">
+          <input type="file" id="employeeExcel" class="form-control form-control-sm" accept=".xlsx,.xls,.xlsm" style="max-width:230px">
+          <button class="btn btn-outline-success btn-sm" id="importEmployeesBtn"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+          <button class="btn btn-primary btn-sm" id="addEmployeeBtn"><i class="bi bi-person-plus"></i> Add Employee</button>
+        </div>
+      </div>
+
+      <div class="card shadow-sm">
+        <div class="card-body">
+          <div class="row g-2 mb-3">
+            <div class="col-md-5"><input id="employeeSearch" class="form-control" placeholder="Search employee, position, school/office..."></div>
+            <div class="col-md-3">
+              <select id="employeeTypeFilter" class="form-select">
+                <option value="">All Personnel Types</option>
+                <option>Teaching</option><option>Non-Teaching</option>
+              </select>
+            </div>
+            <div class="col-md-3">
+              <select id="employeeStatusFilter" class="form-select">
+                <option value="">All Status</option>
+                <option>Active</option><option>Transferred</option><option>Retired</option><option>Resigned</option><option>Separated</option><option>Inactive</option>
+              </select>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="table table-hover align-middle">
+              <thead class="table-light">
+                <tr><th>#</th><th>Employee</th><th>Employee No.</th><th>Position</th><th>Type</th><th>Employment</th><th>School/Office</th><th>Status</th><th class="text-end">Action</th></tr>
+              </thead>
+              <tbody id="employeeBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DTR -->
+    <section id="view-dtr" class="view">
+      <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+        <div><h4 class="mb-1">DTR / Attendance</h4><div class="small-muted">Monthly travel, leave, tardiness and undertime encoding</div></div>
+        <div class="d-flex flex-wrap gap-2">
+          <input type="month" id="dtrMonth" class="form-control form-control-sm" style="width:165px">
+          <button class="btn btn-primary btn-sm" id="loadEmployeesMonthBtn"><i class="bi bi-people-fill"></i> Load Employees</button>
+          <button class="btn btn-outline-danger btn-sm" id="resetMonthBtn"><i class="bi bi-trash"></i> Reset Month</button>
+        </div>
+      </div>
+      <div class="card shadow-sm">
+        <div class="card-body p-0">
+          <div class="table-responsive" style="max-height:65vh">
+            <table class="table table-bordered table-sm mb-0">
+              <thead class="table-light sticky-top">
+                <tr>
+                  <th rowspan="2">Employee</th><th rowspan="2">Travel</th><th rowspan="2">Leave</th>
+                  <th colspan="3" class="text-danger text-center">Tardiness</th>
+                  <th colspan="3" class="text-warning text-center">Undertime</th>
+                  <th colspan="2" class="text-success text-center">Grand Total</th>
+                  <th rowspan="2">Remarks</th><th rowspan="2">Action</th>
+                </tr>
+                <tr><th>Days</th><th>Mins</th><th>Conv</th><th>Days</th><th>Mins</th><th>Conv</th><th>Days</th><th>Conv</th></tr>
+              </thead>
+              <tbody id="dtrBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      <div class="d-flex justify-content-end mt-3">
+        <button class="btn btn-success" id="saveDtrReportBtn"><i class="bi bi-floppy-fill"></i> Save Monthly Report</button>
+      </div>
+    </section>
+
+    <!-- CONSOLIDATED -->
+    <section id="view-consolidated" class="view">
+      <div class="mb-3"><h4 class="mb-1">Consolidated DTR Reports</h4><div class="small-muted">Saved monthly DTR reports</div></div>
+      <div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive">
+        <table class="table table-hover mb-0"><thead class="table-light"><tr><th>Report</th><th>Month</th><th>Saved</th><th class="text-end">Actions</th></tr></thead><tbody id="savedReportsBody"></tbody></table>
+      </div></div></div>
+    </section>
+
+    <!-- LEAVE -->
+    <section id="view-leave" class="view">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h4 class="mb-1">Leave Management</h4><div class="small-muted">Track employee leave applications and status</div></div>
+        <button class="btn btn-primary btn-sm" id="addLeaveBtn"><i class="bi bi-plus-lg"></i> Add Leave</button>
+      </div>
+      <div class="card shadow-sm"><div class="card-body">
+        <div class="table-responsive"><table class="table table-hover">
+          <thead class="table-light"><tr><th>Employee</th><th>Leave Type</th><th>Inclusive Dates</th><th>Days</th><th>Date Filed</th><th>Status</th><th>Remarks</th><th class="text-end">Action</th></tr></thead>
+          <tbody id="leaveBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- 201 FILE -->
+    <section id="view-files201" class="view">
+      <div class="mb-3"><h4 class="mb-1">201 File Monitoring</h4><div class="small-muted">Monitor completeness of personnel records</div></div>
+      <div class="card shadow-sm"><div class="card-body">
+        <div class="table-responsive"><table class="table table-hover">
+          <thead class="table-light"><tr><th>Employee</th><th>PDS</th><th>SALN</th><th>Appointment</th><th>TOR/Diploma</th><th>Eligibility</th><th>NBI/Medical</th><th>Status</th><th class="text-end">Action</th></tr></thead>
+          <tbody id="files201Body"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- TRAINING -->
+    <section id="view-training" class="view">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h4 class="mb-1">Training / Learning & Development</h4><div class="small-muted">Employee training history and hours</div></div>
+        <button class="btn btn-primary btn-sm" id="addTrainingBtn"><i class="bi bi-plus-lg"></i> Add Training</button>
+      </div>
+      <div class="card shadow-sm"><div class="card-body">
+        <div class="table-responsive"><table class="table table-hover">
+          <thead class="table-light"><tr><th>Employee</th><th>Training</th><th>Provider</th><th>Dates</th><th>Hours</th><th>Level</th><th>Certificate</th><th class="text-end">Action</th></tr></thead>
+          <tbody id="trainingBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- PERFORMANCE -->
+    <section id="view-performance" class="view">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <div><h4 class="mb-1">Performance Monitoring</h4><div class="small-muted">IPCRF / OPCRF rating history</div></div>
+        <button class="btn btn-primary btn-sm" id="addPerformanceBtn"><i class="bi bi-plus-lg"></i> Add Performance Record</button>
+      </div>
+      <div class="card shadow-sm"><div class="card-body">
+        <div class="table-responsive"><table class="table table-hover">
+          <thead class="table-light"><tr><th>Employee</th><th>Period</th><th>Type</th><th>Rating</th><th>Adjectival Rating</th><th>Submission</th><th class="text-end">Action</th></tr></thead>
+          <tbody id="performanceBody"></tbody>
+        </table></div>
+      </div></div>
+    </section>
+
+    <!-- REPORTS -->
+    <section id="view-reports" class="view">
+      <div class="mb-3"><h4 class="mb-1">HR Reports</h4><div class="small-muted">Quick export of current HR data</div></div>
+      <div class="row g-3">
+        <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h6>Employee Masterlist</h6><p class="text-muted small">Export active and inactive personnel records.</p><button class="btn btn-success btn-sm" id="exportEmployeesBtn"><i class="bi bi-file-earmark-excel"></i> Export Excel</button></div></div></div>
+        <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h6>Leave Register</h6><p class="text-muted small">Export all encoded leave applications.</p><button class="btn btn-success btn-sm" id="exportLeaveBtn"><i class="bi bi-file-earmark-excel"></i> Export Excel</button></div></div></div>
+        <div class="col-md-4"><div class="card shadow-sm h-100"><div class="card-body"><h6>Training Register</h6><p class="text-muted small">Export training and L&D history.</p><button class="btn btn-success btn-sm" id="exportTrainingBtn"><i class="bi bi-file-earmark-excel"></i> Export Excel</button></div></div></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- EMPLOYEE MODAL -->
+<div class="modal fade" id="employeeModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
+<div class="modal-header bg-primary text-white"><h5 class="modal-title">Employee Profile</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="empId">
+<div class="row g-3">
+<div class="col-md-3"><label class="form-label">Employee No.</label><input id="empNo" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Last Name *</label><input id="empLast" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">First Name *</label><input id="empFirst" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Middle Name</label><input id="empMiddle" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Position</label><input id="empPosition" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Personnel Type</label><select id="empType" class="form-select"><option>Teaching</option><option>Non-Teaching</option></select></div>
+<div class="col-md-3"><label class="form-label">Employment Status</label><select id="empEmployment" class="form-select"><option>Permanent</option><option>Provisional</option><option>Substitute</option><option>Contractual</option><option>COS</option><option>JO</option><option>Others</option></select></div>
+<div class="col-md-3"><label class="form-label">Plantilla Item</label><input id="empPlantilla" class="form-control"></div>
+<div class="col-md-2"><label class="form-label">Salary Grade</label><input id="empSG" class="form-control"></div>
+<div class="col-md-2"><label class="form-label">Step</label><input id="empStep" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">School / Office</label><input id="empOffice" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Date Hired</label><input type="date" id="empHired" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Email</label><input type="email" id="empEmail" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Mobile</label><input id="empMobile" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Employee Status</label><select id="empStatus" class="form-select"><option>Active</option><option>Transferred</option><option>Retired</option><option>Resigned</option><option>Separated</option><option>Inactive</option></select></div>
+</div></div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveEmployeeBtn">Save Employee</button></div>
+</div></div></div>
+
+<!-- DTR EDIT MODAL -->
+<div class="modal fade" id="dtrModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+<div class="modal-header bg-primary text-white"><h5 class="modal-title">Edit DTR Entry</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+<input type="hidden" id="dtrId"><h5 id="dtrEmployeeName" class="text-primary mb-3"></h5>
+<div class="row g-3">
+<div class="col-md-6"><label class="form-label">Travel Dates</label><input id="dtrTravel" class="form-control"></div>
+<div class="col-md-6"><label class="form-label">Leave Dates</label><input id="dtrLeave" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Tardy Days</label><input type="number" id="dtrTardyDays" class="form-control calc"></div>
+<div class="col-md-3"><label class="form-label">Tardy Minutes</label><input type="number" id="dtrTardyMins" class="form-control calc"></div>
+<div class="col-md-3"><label class="form-label">Tardy Conversion</label><input id="dtrTardyConv" class="form-control" readonly></div>
+<div class="col-md-3"><label class="form-label">Total Days</label><input id="dtrTotalDays" class="form-control" readonly></div>
+<div class="col-md-3"><label class="form-label">Undertime Days</label><input type="number" id="dtrUnderDays" class="form-control calc"></div>
+<div class="col-md-3"><label class="form-label">Undertime Minutes</label><input type="number" id="dtrUnderMins" class="form-control calc"></div>
+<div class="col-md-3"><label class="form-label">Undertime Conversion</label><input id="dtrUnderConv" class="form-control" readonly></div>
+<div class="col-md-3"><label class="form-label">Total Conversion</label><input id="dtrTotalConv" class="form-control" readonly></div>
+<div class="col-12"><label class="form-label">Remarks</label><textarea id="dtrRemarks" class="form-control" rows="2"></textarea></div>
+</div></div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveDtrBtn">Save</button></div>
+</div></div></div>
+
+<!-- GENERIC MODALS -->
+<div class="modal fade" id="leaveModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Leave Application</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><input type="hidden" id="leaveId">
+<div class="mb-2"><label class="form-label">Employee</label><select id="leaveEmployee" class="form-select"></select></div>
+<div class="mb-2"><label class="form-label">Leave Type</label><select id="leaveType" class="form-select"><option>Vacation Leave</option><option>Sick Leave</option><option>Maternity Leave</option><option>Paternity Leave</option><option>Special Privilege Leave</option><option>Solo Parent Leave</option><option>Study Leave</option><option>Others</option></select></div>
+<div class="row g-2"><div class="col-6"><label class="form-label">From</label><input type="date" id="leaveFrom" class="form-control"></div><div class="col-6"><label class="form-label">To</label><input type="date" id="leaveTo" class="form-control"></div></div>
+<div class="row g-2 mt-1"><div class="col-6"><label class="form-label">No. of Days</label><input type="number" step="0.5" id="leaveDays" class="form-control"></div><div class="col-6"><label class="form-label">Date Filed</label><input type="date" id="leaveFiled" class="form-control"></div></div>
+<div class="mt-2"><label class="form-label">Status</label><select id="leaveStatus" class="form-select"><option>Pending</option><option>Approved</option><option>Disapproved</option><option>Cancelled</option></select></div>
+<div class="mt-2"><label class="form-label">Remarks</label><textarea id="leaveRemarks" class="form-control"></textarea></div>
+</div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveLeaveBtn">Save</button></div>
+</div></div></div>
+
+<div class="modal fade" id="file201Modal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">201 File Checklist</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><input type="hidden" id="file201EmployeeId"><h6 id="file201Name"></h6>
+<div class="row g-2 mt-2">
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fPds"><label class="form-check-label">PDS</label></div></div>
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fSaln"><label class="form-check-label">SALN</label></div></div>
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fAppointment"><label class="form-check-label">Appointment</label></div></div>
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fTor"><label class="form-check-label">TOR / Diploma</label></div></div>
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fEligibility"><label class="form-check-label">Eligibility</label></div></div>
+<div class="col-6"><div class="form-check"><input class="form-check-input" type="checkbox" id="fNbi"><label class="form-check-label">NBI / Medical</label></div></div>
+</div>
+</div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="save201Btn">Save Checklist</button></div>
+</div></div></div>
+
+<div class="modal fade" id="trainingModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Training / L&D Record</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><input type="hidden" id="trainingId">
+<div class="mb-2"><label class="form-label">Employee</label><select id="trainingEmployee" class="form-select"></select></div>
+<div class="mb-2"><label class="form-label">Training Title</label><input id="trainingTitle" class="form-control"></div>
+<div class="mb-2"><label class="form-label">Provider</label><input id="trainingProvider" class="form-control"></div>
+<div class="row g-2"><div class="col-6"><label class="form-label">From</label><input type="date" id="trainingFrom" class="form-control"></div><div class="col-6"><label class="form-label">To</label><input type="date" id="trainingTo" class="form-control"></div></div>
+<div class="row g-2 mt-1"><div class="col-6"><label class="form-label">Hours</label><input type="number" step="0.5" id="trainingHours" class="form-control"></div><div class="col-6"><label class="form-label">Level</label><select id="trainingLevel" class="form-select"><option>School</option><option>District</option><option>Division</option><option>Regional</option><option>National</option><option>International</option></select></div></div>
+<div class="mt-2"><label class="form-label">Certificate</label><select id="trainingCertificate" class="form-select"><option>Available</option><option>Missing</option></select></div>
+</div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveTrainingBtn">Save</button></div>
+</div></div></div>
+
+<div class="modal fade" id="performanceModal" tabindex="-1"><div class="modal-dialog"><div class="modal-content">
+<div class="modal-header"><h5 class="modal-title">Performance Record</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><input type="hidden" id="performanceId">
+<div class="mb-2"><label class="form-label">Employee</label><select id="performanceEmployee" class="form-select"></select></div>
+<div class="mb-2"><label class="form-label">Period</label><input id="performancePeriod" class="form-control" placeholder="e.g. SY 2026-2027"></div>
+<div class="row g-2"><div class="col-6"><label class="form-label">Type</label><select id="performanceType" class="form-select"><option>IPCRF</option><option>OPCRF</option></select></div><div class="col-6"><label class="form-label">Rating</label><input type="number" step="0.001" id="performanceRating" class="form-control"></div></div>
+<div class="mt-2"><label class="form-label">Adjectival Rating</label><select id="performanceAdjectival" class="form-select"><option>Outstanding</option><option>Very Satisfactory</option><option>Satisfactory</option><option>Unsatisfactory</option><option>Poor</option></select></div>
+<div class="mt-2"><label class="form-label">Submission</label><select id="performanceSubmission" class="form-select"><option>Submitted</option><option>Pending</option></select></div>
+</div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="savePerformanceBtn">Save</button></div>
+</div></div></div>
+
+<div id="printArea" class="print-area p-3">
+  <h4 class="text-center">SCHOOL HUMAN RESOURCE MONITORING SYSTEM</h4>
+  <h5 class="text-center" id="printTitle"></h5>
+  <div id="printContent"></div>
 </div>
 
-<div class="modal fade" id="editModal" tabindex="-1">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title">Edit Attendance</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <input type="hidden" id="editId">
-                <h4 id="editNameDisplay" class="mb-3 text-primary"></h4>
-                
-                <div class="row g-3 mb-3">
-                    <div class="col-md-6">
-                        <label class="small fw-bold">Travel Dates</label>
-                        <input type="text" id="inpTravel" class="form-control">
-                    </div>
-                    <div class="col-md-6">
-                        <label class="small fw-bold">Leave Dates</label>
-                        <input type="text" id="inpLeave" class="form-control">
-                    </div>
-                </div>
-                <hr>
-                <div class="row g-3">
-                    <div class="col-md-4">
-                        <div class="p-2 bg-light border rounded text-center">
-                            <h6 class="text-danger fw-bold small">TARDINESS</h6>
-                            <input type="number" id="inpTardyDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpTardyMins" class="form-control mb-1 calc-input" placeholder="Mins">
-                            <input type="number" id="inpTardyConv" class="form-control" placeholder="Conv" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-2 bg-light border rounded text-center">
-                            <h6 class="text-warning text-dark fw-bold small">UNDERTIME</h6>
-                            <input type="number" id="inpUnderDays" class="form-control mb-1 calc-input" placeholder="Days">
-                            <input type="number" id="inpUnderMins" class="form-control mb-1 calc-input" placeholder="Mins">
-                            <input type="number" id="inpUnderConv" class="form-control" placeholder="Conv" readonly>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="p-2 bg-success-subtle border border-success rounded text-center">
-                            <h6 class="text-success fw-bold small">GRAND TOTAL</h6>
-                            <input type="number" id="inpTotalDays" class="form-control mb-1 fw-bold bg-white" readonly>
-                            <input type="number" id="inpTotalConv" class="form-control fw-bold bg-white" readonly>
-                        </div>
-                    </div>
-                </div>
-                <div class="mt-3">
-                    <label class="small fw-bold">Remarks</label>
-                    <textarea id="inpRemarks" class="form-control" rows="2"></textarea>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary" id="btnSave">Save</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="modal fade" id="batchModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-collection me-2"></i>Batch Update Selected</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <p class="text-muted small">Enter values below to apply them to all selected employees. Leave fields blank if you do not want to update them.</p>
-                <div class="mb-3">
-                    <label class="small fw-bold">Apply Travel Dates</label>
-                    <input type="text" id="batchTravel" class="form-control" placeholder="e.g., Nov 10-12">
-                </div>
-                <div class="mb-3">
-                    <label class="small fw-bold">Apply Leave Dates</label>
-                    <input type="text" id="batchLeave" class="form-control" placeholder="e.g., Sick Leave Nov 5">
-                </div>
-                <div class="mb-3">
-                    <label class="small fw-bold">Apply Remarks</label>
-                    <input type="text" id="batchRemarks" class="form-control" placeholder="e.g., Holiday">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-warning fw-bold" onclick="window.executeBatchUpdate()">Apply to Selected</button>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div id="print-area" class="print-section">
-    <div class="print-header">
-        <h4>DEPARTMENT OF EDUCATION</h4>
-        <h5>Region I</h5>
-        <h5>San Fernando City (La Union)</h5>
-        <br>
-        <h4 id="print-title">Daily Time Record Report</h4>
-    </div>
-    <table class="table-print">
-        <thead>
-            <tr>
-                <th rowspan="2" style="width: 20%;">NAME OF EMPLOYEE</th>
-                <th rowspan="2" style="width: 10%;">TRAVEL</th>
-                <th rowspan="2" style="width: 10%;">LEAVE</th>
-                <th colspan="3">TARDINESS</th>
-                <th colspan="3">UNDERTIME</th>
-                <th colspan="2">GRAND TOTAL</th>
-                <th rowspan="2" style="width: 15%;">REMARKS</th>
-            </tr>
-            <tr>
-                <th>No. of Days</th><th>Minutes</th><th>Conversion</th>
-                <th>No. of Days</th><th>Minutes</th><th>Conversion</th>
-                <th>No. of Days</th><th>Conversion</th>
-            </tr>
-        </thead>
-        <tbody id="print-table-body"></tbody>
-    </table>
-    <div class="print-footer">
-        <div class="signatory-box">
-            <p>Prepared by:</p>
-            <div class="signatory-line"></div>
-            <p><strong>Administrative Officer V</strong></p>
-            <p>Personnel Section</p>
-        </div>
-        <div class="signatory-box">
-            <p>Approved:</p>
-            <div class="signatory-line"></div>
-            <p><strong>Chief Administrative Officer</strong></p>
-        </div>
-    </div>
-</div>
-
-<div id="print-summary-area" class="print-section">
-    <div class="print-header">
-        <h4>DEPARTMENT OF EDUCATION</h4>
-        <h5>Region I - San Fernando City (La Union)</h5>
-        <br>
-        <h4 id="print-summary-title">Summary of Tardiness & Undertime</h4>
-    </div>
-    <table class="table-print">
-        <thead>
-            <tr>
-                <th style="width: 30%;">NAME OF EMPLOYEE</th>
-                <th style="width: 15%;">TARDINESS (Days/Mins)</th>
-                <th style="width: 15%;">UNDERTIME (Days/Mins)</th>
-                <th style="width: 20%;">TOTAL (Days / Conv)</th>
-                <th style="width: 20%;">REMARKS</th>
-            </tr>
-        </thead>
-        <tbody id="print-summary-body"></tbody>
-    </table>
-    <div class="print-footer">
-        <div class="signatory-box" style="width: 100%; text-align: left; margin-top: 20px;">
-            <p>Prepared by:</p>
-            <div class="signatory-line" style="width: 250px; margin: 30px 0 5px 0;"></div>
-            <p><strong>HR Personnel</strong></p>
-        </div>
-    </div>
-</div>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 
 <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-    import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, query, where, onSnapshot, writeBatch, getDocs, orderBy, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
 
-    // --- CONFIG ---
-    const firebaseConfig = {
-      apiKey: "AIzaSyAaU2vOGHM4ugJXGhFLmrAJdXi1bPr8wig",
-      authDomain: "dtr-report.firebaseapp.com",
-      projectId: "dtr-report",
-      storageBucket: "dtr-report.firebasestorage.app",
-      messagingSenderId: "759250910768",
-      appId: "1:759250910768:web:184cdd2fdd8e30c17cf7f5",
-      measurementId: "G-HD3V51NGL7"
-    };
+import {
+  getFirestore, collection, doc, setDoc, addDoc, updateDoc, deleteDoc,
+  getDocs, getDoc, onSnapshot, query, where, orderBy, writeBatch,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const reportsCol = collection(db, "monthly_reports_data"); 
-    const employeesCol = collection(db, "master_employees");
-    const savedReportsCol = collection(db, "saved_reports");
-
-    let currentReportData = [];
-    let masterList = [];
-    let monthListenerUnsubscribe = null;
-    let analyticsChartInstance = null;
-    let savedReportsListenerUnsubscribe = null;
-
-    // --- NAVIGATION ---
-    window.showView = (viewName, link) => {
-        document.querySelectorAll('#sidebar-wrapper .list-group-item').forEach(el => el.classList.remove('active'));
-        if(link) link.classList.add('active');
-        ['dashboard', 'encoding', 'employees', 'consolidation'].forEach(v => {
-            document.getElementById(`view-${v}`).classList.add('d-none');
-        });
-        document.getElementById(`view-${viewName}`).classList.remove('d-none');
-        if(viewName === 'consolidation') window.loadSavedReports();
-    };
-    document.getElementById("menu-toggle").addEventListener("click", (e) => { e.preventDefault(); document.getElementById("wrapper").classList.toggle("toggled"); });
-
-    // --- 1. MASTER LIST ---
-    onSnapshot(query(employeesCol, orderBy("name", "asc")), (snap) => {
-        masterList = [];
-        const tbody = document.getElementById('masterTableBody');
-        tbody.innerHTML = '';
-
-        snap.forEach(d => {
-            const data = d.data();
-            data.id = d.id;
-            masterList.push(data);
-
-            const tr = document.createElement('tr');
-            tr.innerHTML = `
-                <td>${masterList.length}</td>
-                <td class="fw-bold"></td>
-                <td class="text-end">
-                    <button class="btn btn-sm btn-outline-danger" title="Delete employee">
-                        <i class="bi bi-trash"></i>
-                    </button>
-                </td>`;
-            tr.children[1].textContent = data.name || '';
-            tr.querySelector('button').addEventListener('click', () => window.deleteMaster(data.id, data.name));
-            tbody.appendChild(tr);
-        });
-
-        document.getElementById('dash-master-count').innerText = masterList.length;
-        if(masterList.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="text-center py-3 text-muted">No employees yet. Import an Excel master list.</td></tr>';
-        }
-    }, (error) => {
-        console.error('Master employee listener error:', error);
-        document.getElementById('masterTableBody').innerHTML = `<tr><td colspan="3" class="text-center text-danger py-3">Unable to load employees: ${error.message}</td></tr>`;
-    });
-
-    window.importMasterList = () => {
-        const fileIn = document.getElementById('masterUpload');
-        if(!fileIn.files[0]) return alert("Select an Excel file first.");
-
-        const reader = new FileReader();
-        reader.readAsArrayBuffer(fileIn.files[0]);
-        reader.onload = async (e) => {
-            try {
-                const wb = XLSX.read(new Uint8Array(e.target.result), {type: 'array'});
-                const data = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], {header: 1, defval: ''});
-                let nameColIndex = -1;
-                let startRowIndex = -1;
-
-                for(let r = 0; r < Math.min(data.length, 30); r++) {
-                    const row = data[r] || [];
-                    for(let c = 0; c < row.length; c++) {
-                        const value = String(row[c] ?? '').trim().toUpperCase();
-                        if(value.includes('NAME OF EMPLOYEE') || value === 'EMPLOYEE NAME' || value === 'NAME') {
-                            nameColIndex = c;
-                            startRowIndex = r + 1;
-                            break;
-                        }
-                    }
-                    if(nameColIndex !== -1) break;
-                }
-
-                // Fallback: use the first non-empty column if no header was found.
-                if(nameColIndex === -1) {
-                    for(let c = 0; c < Math.max(...data.map(r => (r || []).length), 1); c++) {
-                        if(data.some(r => String((r || [])[c] ?? '').trim().length > 2)) {
-                            nameColIndex = c;
-                            startRowIndex = 0;
-                            break;
-                        }
-                    }
-                }
-
-                if(nameColIndex === -1) return alert('No employee-name column was found in the selected file.');
-
-                const existing = new Set(masterList.map(m => (m.name || '').trim().toLowerCase()));
-                const names = [];
-                for(let i = startRowIndex; i < data.length; i++) {
-                    const raw = String((data[i] || [])[nameColIndex] ?? '').trim();
-                    const lower = raw.toLowerCase();
-                    if(!raw || raw.length < 3) continue;
-                    if(/prepared by|approved by|certified|signature|name of employee/i.test(raw)) continue;
-                    if(existing.has(lower) || names.some(n => n.toLowerCase() === lower)) continue;
-                    names.push(raw);
-                }
-
-                if(names.length === 0) return alert('No new employee names were found.');
-
-                // Firestore batches allow up to 500 writes. Use conservative chunks.
-                for(let i = 0; i < names.length; i += 450) {
-                    const batch = writeBatch(db);
-                    names.slice(i, i + 450).forEach(name => batch.set(doc(employeesCol), {name}));
-                    await batch.commit();
-                }
-
-                fileIn.value = '';
-                alert(`Imported ${names.length} employee${names.length === 1 ? '' : 's'}.`);
-            } catch(err) {
-                console.error(err);
-                alert('Unable to import the Excel file: ' + err.message);
-            }
-        };
-        reader.onerror = () => alert('Unable to read the selected file.');
-    };
-
-    // Delete one employee from the master list and all monthly records bearing the same name.
-    window.deleteMaster = async(id, name) => { 
-    if(!confirm(`Are you sure you want to completely remove ${name}? This will delete them from the Master List AND erase all their past monthly records.`)) return;
-    
-    try {
-        // 1. Delete from the Master Employee List
-        await deleteDoc(doc(db, "master_employees", id));
-        
-        // 2. Find and delete all monthly DTR records for this employee
-        const q = query(reportsCol, where("name", "==", name));
-        const snap = await getDocs(q);
-        
-        if (!snap.empty) {
-            const batch = writeBatch(db);
-            snap.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-        }
-        
-        alert(`${name} has been successfully removed from the system.`);
-    } catch(e) { 
-        alert("Error deleting employee: " + e.message); 
-    } 
+const firebaseConfig = {
+  apiKey: "AIzaSyAaU2vOGHM4ugJXGhFLmrAJdXi1bPr8wig",
+  authDomain: "dtr-report.firebaseapp.com",
+  projectId: "dtr-report",
+  storageBucket: "dtr-report.firebasestorage.app",
+  messagingSenderId: "759250910768",
+  appId: "1:759250910768:web:184cdd2fdd8e30c17cf7f5",
+  measurementId: "G-HD3V51NGL7"
 };
 
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    window.deleteAllMaster = async () => {
-        if(masterList.length === 0) return alert('The Master Employee List is already empty.');
-        if(!confirm(`Delete ALL ${masterList.length} employees and ALL of their monthly DTR records? This cannot be undone.`)) return;
+const employeesCol = collection(db,"master_employees");
+const dtrCol = collection(db,"monthly_reports_data");
+const savedReportsCol = collection(db,"saved_reports");
+const leaveCol = collection(db,"leave_records");
+const files201Col = collection(db,"files_201");
+const trainingCol = collection(db,"training_records");
+const performanceCol = collection(db,"performance_records");
 
-        try {
-            const [empSnap, reportSnap, savedSnap] = await Promise.all([getDocs(employeesCol), getDocs(reportsCol), getDocs(savedReportsCol)]);
-            const refs = [
-                ...empSnap.docs.map(d => d.ref),
-                ...reportSnap.docs.map(d => d.ref),
-                ...savedSnap.docs.map(d => d.ref)
-            ];
-            for(let i = 0; i < refs.length; i += 450) {
-                const batch = writeBatch(db);
-                refs.slice(i, i + 450).forEach(ref => batch.delete(ref));
-                await batch.commit();
-            }
-            alert('All employees, monthly DTR records, and saved report entries were deleted.');
-        } catch(e) {
-            console.error(e);
-            alert('Error deleting the master list: ' + e.message);
-        }
-    };
+let employees=[], dtrData=[], leaves=[], files201=[], trainings=[], performances=[], chart=null;
+let dtrUnsub=null;
 
-    // --- NEW: Dashboard Analytics Chart ---
-    function updateAnalyticsChart(data) {
-        const ctx = document.getElementById('analyticsChart');
-        if (!ctx) return;
-        if (analyticsChartInstance) analyticsChartInstance.destroy();
+const $ = id => document.getElementById(id);
+const safe = v => String(v ?? "");
+const fullName = e => {
+  if(e.fullName) return e.fullName;
+  if(e.name) return e.name;
+  return [e.lastName, e.firstName, e.middleName].filter(Boolean).join(", ").replace(", ,",",");
+};
+const activeEmployees = () => employees.filter(e => (e.status || "Active") === "Active");
 
-        // Filter employees who have recorded tardiness or undertime
-        const filteredData = data.filter(d => (parseFloat(d.tardyMins) > 0 || parseFloat(d.underMins) > 0));
-        
-        const labels = filteredData.map(d => d.name.substring(0, 15) + "..."); // Truncate long names
-        const tardyData = filteredData.map(d => parseFloat(d.tardyMins) || 0);
-        const underData = filteredData.map(d => parseFloat(d.underMins) || 0);
+function showView(name){
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+  $("view-"+name).classList.add("active");
+  document.querySelectorAll(".nav-link").forEach(a=>a.classList.toggle("active",a.dataset.view===name));
+  if(name==="consolidated") loadSavedReports();
+}
+document.querySelectorAll(".nav-link").forEach(a=>a.addEventListener("click",e=>{e.preventDefault();showView(a.dataset.view);}));
+$("menuBtn").addEventListener("click",()=>{
+  if(innerWidth<992) document.body.classList.toggle("sidebar-open");
+  else document.body.classList.toggle("sidebar-hidden");
+});
 
-        analyticsChartInstance = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: labels,
-                datasets: [
-                    { label: 'Tardiness (Mins)', data: tardyData, backgroundColor: '#dc3545', borderRadius: 4 },
-                    { label: 'Undertime (Mins)', data: underData, backgroundColor: '#ffc107', borderRadius: 4 }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: { beginAtZero: true, title: { display: true, text: 'Minutes' } }
-                },
-                plugins: {
-                    legend: { position: 'top' }
-                }
-            }
-        });
-    }
+function modal(id){ return bootstrap.Modal.getOrCreateInstance($(id)); }
 
-    // --- 2. MONTHLY ENCODING ---
-    const now = new Date();
-    document.getElementById('filterMonth').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+function fillEmployeeSelects(){
+  const options = activeEmployees().sort((a,b)=>fullName(a).localeCompare(fullName(b))).map(e=>`<option value="${e.id}">${fullName(e)}</option>`).join("");
+  ["leaveEmployee","trainingEmployee","performanceEmployee"].forEach(id=>$(id).innerHTML=options);
+}
 
-    function loadMonthData(monthStr) {
-        if (monthListenerUnsubscribe) monthListenerUnsubscribe();
-        const m = monthStr || document.getElementById('filterMonth').value;
-        const q = query(reportsCol, where("month", "==", m));
-        
-        monthListenerUnsubscribe = onSnapshot(q, (snap) => {
-            currentReportData = [];
-            const tbody = document.getElementById('reportTableBody');
-            tbody.innerHTML = '';
-            
-            // Reset "Check All" box
-            const checkAllBox = document.getElementById('checkAll');
-            if(checkAllBox) checkAllBox.checked = false;
+function renderEmployees(){
+  const term=$("employeeSearch").value.toLowerCase().trim();
+  const type=$("employeeTypeFilter").value;
+  const status=$("employeeStatusFilter").value;
+  const rows=employees.filter(e=>{
+    const hay=[fullName(e),e.employeeNo,e.position,e.schoolOffice].join(" ").toLowerCase();
+    return (!term||hay.includes(term)) && (!type||e.employeeType===type) && (!status||(e.status||"Active")===status);
+  }).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
 
-            snap.forEach(d => { const data = d.data(); data.id = d.id; currentReportData.push(data); });
-            currentReportData.sort((a,b) => a.name.localeCompare(b.name));
-            
-            // UPDATE CHART EVERY TIME DATA CHANGES
-            updateAnalyticsChart(currentReportData);
-            
-            if(currentReportData.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="14" class="text-center py-3 text-muted">No data. Click "Load Employees".</td></tr>';
-            } else {
-                currentReportData.forEach(d => {
-                    const safeName = d.name.replace(/'/g, "\\'"); // Protect against apostrophes
-                 tbody.innerHTML += `
-                    <tr>
-                        <td class="text-center align-middle">
-                            <input type="checkbox" class="form-check-input row-check" value="${d.id}">
-                        </td>
-                        <td class="fw-bold text-start">${d.name}</td>
-                        <td>${d.travel||''}</td><td>${d.leave||''}</td>
-                        <td>${d.tardyDays||''}</td><td>${d.tardyMins||''}</td><td>${d.tardyConv||''}</td>
-                        <td>${d.underDays||''}</td><td>${d.underMins||''}</td><td>${d.underConv||''}</td>
-                        <td class="bg-success-subtle fw-bold">${d.totalDays||''}</td><td class="bg-success-subtle fw-bold">${d.totalConv||''}</td>
-                        <td class="text-start small fst-italic text-muted">${d.remarks||''}</td>
-                        <td style="white-space: nowrap;">
-                            <button class="btn btn-sm btn-light border me-1" onclick="window.editRec('${d.id}')" title="Edit"><i class="bi bi-pencil"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteReportRecord('${d.id}', '${safeName}')" title="Remove from this month"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>`;
-                });
-            }
-        });
-    }
-    document.getElementById('filterMonth').addEventListener('change', (e) => loadMonthData(e.target.value));
-    loadMonthData();
+  $("employeeBody").innerHTML = rows.length ? rows.map((e,i)=>`
+    <tr>
+      <td>${i+1}</td>
+      <td class="fw-semibold">${fullName(e)}</td>
+      <td>${safe(e.employeeNo)}</td>
+      <td>${safe(e.position)}</td>
+      <td>${safe(e.employeeType)}</td>
+      <td>${safe(e.employmentStatus)}</td>
+      <td>${safe(e.schoolOffice)}</td>
+      <td><span class="badge ${((e.status||"Active")==="Active")?"text-bg-success":"text-bg-secondary"}">${safe(e.status||"Active")}</span></td>
+      <td class="text-end">
+        <button class="btn btn-sm btn-outline-primary me-1 edit-emp" data-id="${e.id}"><i class="bi bi-pencil"></i></button>
+        <button class="btn btn-sm btn-outline-secondary deactivate-emp" data-id="${e.id}"><i class="bi bi-person-dash"></i></button>
+      </td>
+    </tr>`).join("") : `<tr><td colspan="9" class="text-center text-muted py-4">No employee records found.</td></tr>`;
 
-    // Initialize dashboard saved-report count without requiring the user to open Consolidated Reports.
-    getDocs(savedReportsCol).then(snap => {
-        document.getElementById('dash-saved-count').innerText = snap.size;
-    }).catch(err => console.error('Saved report count error:', err));
+  document.querySelectorAll(".edit-emp").forEach(b=>b.onclick=()=>openEmployee(b.dataset.id));
+  document.querySelectorAll(".deactivate-emp").forEach(b=>b.onclick=()=>deactivateEmployee(b.dataset.id));
+}
 
-        // NEW FUNCTION: Delete a specific employee from the current month's encoding
-window.deleteReportRecord = async (id, name) => {
-    if(confirm(`Are you sure you want to remove ${name} from this month's encoding?`)) {
-        try {
-            await deleteDoc(doc(reportsCol, id));
-        } catch(e) {
-            alert("Error removing record: " + e.message);
-        }
-    }
+function updateDashboard(){
+  const total=employees.length;
+  $("statTotal").textContent=total;
+  $("statTeaching").textContent=employees.filter(e=>e.employeeType==="Teaching"&&(e.status||"Active")==="Active").length;
+  $("statNonTeaching").textContent=employees.filter(e=>e.employeeType==="Non-Teaching"&&(e.status||"Active")==="Active").length;
+  $("statInactive").textContent=employees.filter(e=>(e.status||"Active")!=="Active").length;
+  $("alertLeave").textContent=leaves.filter(x=>x.status==="Pending").length;
+  $("alertTraining").textContent=trainings.length;
+
+  const incomplete = activeEmployees().filter(e=>{
+    const f=files201.find(x=>x.employeeId===e.id);
+    return !f || !(f.pds&&f.saln&&f.appointment&&f.tor&&f.eligibility&&f.nbi);
+  }).length;
+  $("alert201").textContent=incomplete;
+}
+
+onSnapshot(employeesCol,s=>{
+  employees=s.docs.map(d=>({id:d.id,...d.data()}));
+  renderEmployees(); fillEmployeeSelects(); render201(); updateDashboard();
+},err=>{console.error(err);$("liveBadge").textContent="Firestore error";$("liveBadge").className="badge text-bg-danger";});
+
+["employeeSearch","employeeTypeFilter","employeeStatusFilter"].forEach(id=>$(id).addEventListener("input",renderEmployees));
+
+function clearEmployeeForm(){
+  ["empId","empNo","empLast","empFirst","empMiddle","empPosition","empPlantilla","empSG","empStep","empOffice","empHired","empEmail","empMobile"].forEach(id=>$(id).value="");
+  $("empType").value="Teaching";$("empEmployment").value="Permanent";$("empStatus").value="Active";
+}
+$("addEmployeeBtn").onclick=()=>{clearEmployeeForm();modal("employeeModal").show();};
+
+function openEmployee(id){
+  const e=employees.find(x=>x.id===id); if(!e)return;
+  $("empId").value=id;$("empNo").value=safe(e.employeeNo);$("empLast").value=safe(e.lastName);
+  $("empFirst").value=safe(e.firstName);$("empMiddle").value=safe(e.middleName);$("empPosition").value=safe(e.position);
+  $("empType").value=e.employeeType||"Teaching";$("empEmployment").value=e.employmentStatus||"Permanent";
+  $("empPlantilla").value=safe(e.plantillaItem);$("empSG").value=safe(e.salaryGrade);$("empStep").value=safe(e.step);
+  $("empOffice").value=safe(e.schoolOffice);$("empHired").value=safe(e.dateHired);$("empEmail").value=safe(e.email);
+  $("empMobile").value=safe(e.mobile);$("empStatus").value=e.status||"Active";
+  modal("employeeModal").show();
+}
+
+$("saveEmployeeBtn").onclick=async()=>{
+  const last=$("empLast").value.trim(), first=$("empFirst").value.trim();
+  if(!last||!first) return alert("Last Name and First Name are required.");
+  const payload={
+    employeeNo:$("empNo").value.trim(),lastName:last,firstName:first,middleName:$("empMiddle").value.trim(),
+    fullName:[last,first,$("empMiddle").value.trim()].filter(Boolean).join(", "),
+    position:$("empPosition").value.trim(),employeeType:$("empType").value,employmentStatus:$("empEmployment").value,
+    plantillaItem:$("empPlantilla").value.trim(),salaryGrade:$("empSG").value.trim(),step:$("empStep").value.trim(),
+    schoolOffice:$("empOffice").value.trim(),dateHired:$("empHired").value,email:$("empEmail").value.trim(),
+    mobile:$("empMobile").value.trim(),status:$("empStatus").value,updatedAt:serverTimestamp()
+  };
+  const id=$("empId").value;
+  if(id) await updateDoc(doc(employeesCol,id),payload);
+  else await addDoc(employeesCol,{...payload,createdAt:serverTimestamp()});
+  modal("employeeModal").hide();
 };
 
-    // --- NEW: BATCH UPDATE LOGIC ---
-    window.toggleAll = (source) => {
-        document.querySelectorAll('.row-check').forEach(chk => chk.checked = source.checked);
-    };
+async function deactivateEmployee(id){
+  const e=employees.find(x=>x.id===id); if(!e)return;
+  if(!confirm(`Set ${fullName(e)} as Inactive? Historical HR records will be preserved.`))return;
+  await updateDoc(doc(employeesCol,id),{status:"Inactive",updatedAt:serverTimestamp()});
+}
 
-    window.openBatchModal = () => {
-        const selected = document.querySelectorAll('.row-check:checked');
-        if(selected.length === 0) return alert("Please select at least one employee using the checkboxes on the left.");
-        
-        document.getElementById('batchTravel').value = "";
-        document.getElementById('batchLeave').value = "";
-        document.getElementById('batchRemarks').value = "";
-        
-        new bootstrap.Modal(document.getElementById('batchModal')).show();
-    };
-
-    window.executeBatchUpdate = async () => {
-        const selected = document.querySelectorAll('.row-check:checked');
-        const batchTravel = document.getElementById('batchTravel').value.trim();
-        const batchLeave = document.getElementById('batchLeave').value.trim();
-        const batchRemarks = document.getElementById('batchRemarks').value.trim();
-
-        if(!batchTravel && !batchLeave && !batchRemarks) return alert("Please enter at least one value to update.");
-
-        const batch = writeBatch(db);
-        let payload = {};
-        if(batchTravel) payload.travel = batchTravel;
-        if(batchLeave) payload.leave = batchLeave;
-        if(batchRemarks) payload.remarks = batchRemarks;
-
-        selected.forEach(chk => {
-            const ref = doc(reportsCol, chk.value);
-            batch.update(ref, payload);
-        });
-
-        try {
-            await batch.commit();
-            bootstrap.Modal.getInstance(document.getElementById('batchModal')).hide();
-            document.getElementById('checkAll').checked = false; // reset UI
-            alert(`Successfully updated ${selected.length} records.`);
-        } catch(e) {
-            alert("Error in batch update: " + e.message);
+$("importEmployeesBtn").onclick=()=>{
+  const file=$("employeeExcel").files[0]; if(!file)return alert("Choose an Excel file first.");
+  const reader=new FileReader();
+  reader.onload=async ev=>{
+    try{
+      const wb=XLSX.read(ev.target.result,{type:"array"});
+      const data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
+      if(!data.length)return alert("No rows found.");
+      const norm=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k.trim().toLowerCase(),v]));
+      const batchItems=[];
+      for(const raw of data){
+        const r=norm(raw);
+        const complete=safe(r["name of employee"]||r["employee name"]||r["name"]).trim();
+        const last=safe(r["last name"]||r["lastname"]).trim();
+        const first=safe(r["first name"]||r["firstname"]).trim();
+        if(!complete&&!last&&!first)continue;
+        let ln=last,fn=first,mn=safe(r["middle name"]||r["middlename"]).trim();
+        if(complete&&!ln&&!fn){
+          if(complete.includes(",")){const p=complete.split(",");ln=p[0].trim();fn=(p[1]||"").trim();}
+          else {const p=complete.split(/\s+/);fn=p.shift()||"";ln=p.pop()||"";mn=p.join(" ");}
         }
-    };
-
-    window.populateMonth = async () => {
-        const m = document.getElementById('filterMonth').value;
-        if(masterList.length === 0) return alert("Import Master List first.");
-        const missing = masterList.filter(emp => !currentReportData.some(r => r.name === emp.name));
-        if(missing.length === 0) return alert("Employees already loaded.");
-        if(confirm(`Add ${missing.length} employees?`)) {
-            const batch = writeBatch(db);
-            missing.forEach(emp => {
-                const ref = doc(reportsCol);
-                batch.set(ref, { month: m, name: emp.name, travel:"", leave:"", tardyDays:"", tardyMins:"", tardyConv:"", underDays:"", underMins:"", underConv:"", totalDays:"", totalConv:"", remarks: "" });
-            });
-            await batch.commit();
-        }
-    };
-
-    window.clearCurrentMonth = async () => {
-        const m = document.getElementById('filterMonth').value;
-        if(currentReportData.length === 0) return alert("Nothing to clear.");
-        if(!confirm(`⚠️ Reset/Delete ALL records for ${m}?`)) return;
-        try {
-            const q = query(reportsCol, where("month", "==", m));
-            const snap = await getDocs(q);
-            const batch = writeBatch(db);
-            snap.forEach(doc => batch.delete(doc.ref));
-            await batch.commit();
-            alert("Month reset.");
-        } catch(e) { alert("Error: " + e.message); }
-    };
-
-    // --- 3. SAVE REPORT ---
-    document.getElementById('btnSaveReport').addEventListener('click', async () => {
-        const m = document.getElementById('filterMonth').value;
-        if(currentReportData.length === 0) return alert("Table is empty.");
-        const [y, mNum] = m.split('-');
-        const mName = new Date(y, mNum - 1).toLocaleString('default', { month: 'long' });
-        const displayName = `DTR - ${mName} ${y}`;
-        
-        await setDoc(doc(savedReportsCol, m), {
-            reportId: m,
-            displayName: displayName,
-            month: m,
-            savedAt: new Date()
+        batchItems.push({
+          employeeNo:safe(r["employee no."]||r["employee no"]||r["employee number"]),
+          lastName:ln,firstName:fn,middleName:mn,
+          fullName:[ln,fn,mn].filter(Boolean).join(", "),
+          position:safe(r["position"]||r["designation"]),
+          employeeType:safe(r["personnel type"]||r["employee type"]||""),
+          employmentStatus:safe(r["employment status"]||r["appointment status"]||""),
+          schoolOffice:safe(r["school/office"]||r["school office"]||r["office"]||r["school"]),
+          status:"Active",createdAt:serverTimestamp(),updatedAt:serverTimestamp()
         });
-        alert(`Report "${displayName}" saved to Consolidated Reports.`);
-        window.showView('consolidation', document.querySelectorAll('#sidebar-wrapper .list-group-item')[2]);
-    });
+      }
+      for(let i=0;i<batchItems.length;i+=400){
+        const b=writeBatch(db);
+        batchItems.slice(i,i+400).forEach(x=>b.set(doc(employeesCol),x));
+        await b.commit();
+      }
+      $("employeeExcel").value="";
+      alert(`Imported ${batchItems.length} employee records.`);
+    }catch(e){console.error(e);alert("Import failed: "+e.message);}
+  };
+  reader.readAsArrayBuffer(file);
+};
 
-    // --- 4. CONSOLIDATED LIST ---
-    window.loadSavedReports = () => {
-        const tbody = document.getElementById('savedReportsBody');
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Loading...</td></tr>';
-        if(savedReportsListenerUnsubscribe) savedReportsListenerUnsubscribe();
-        savedReportsListenerUnsubscribe = onSnapshot(query(savedReportsCol, orderBy("month", "desc")), (snap) => {
-            tbody.innerHTML = '';
-            let count = 0;
-            snap.forEach(d => {
-                count++;
-                const data = d.data();
-                const dateSavedStr = data.savedAt ? data.savedAt.toDate().toLocaleString() : 'N/A';
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="fw-bold text-primary">${data.displayName}</td>
-                        <td>${data.month}</td>
-                        <td class="small text-muted">${dateSavedStr}</td>
-                        <td class="text-end">
-                            <button class="btn btn-sm btn-outline-dark me-1" onclick="window.printReport('${data.month}', '${data.displayName}')" title="Print Master DTR"><i class="bi bi-printer"></i></button>
-                            <button class="btn btn-sm btn-outline-warning me-1" onclick="window.printSummary('${data.month}', '${data.displayName}')" title="Print Summary of Late/Undertime"><i class="bi bi-clock-history"></i></button>
-                            <button class="btn btn-sm btn-outline-success me-1" onclick="window.downloadExcel('${data.month}', '${data.displayName}')" title="Export Excel"><i class="bi bi-file-earmark-excel"></i></button>
-                            <button class="btn btn-sm btn-outline-primary me-1" onclick="window.editReport('${data.month}')" title="Edit Month"><i class="bi bi-pencil-square"></i></button>
-                            <button class="btn btn-sm btn-outline-danger" onclick="window.deleteReport('${data.month}')" title="Delete Report"><i class="bi bi-trash"></i></button>
-                        </td>
-                    </tr>`;
-            });
-            document.getElementById('dash-saved-count').innerText = count;
-            if(count === 0) tbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted">No saved reports.</td></tr>';
-        });
-    };
+/* DTR */
+const now=new Date();
+$("dtrMonth").value=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,"0")}`;
 
-    window.editReport = (m) => {
-        document.getElementById('filterMonth').value = m;
-        document.getElementById('filterMonth').dispatchEvent(new Event('change'));
-        window.showView('encoding', document.querySelectorAll('#sidebar-wrapper .list-group-item')[1]);
-    };
+function loadDtrMonth(){
+  if(dtrUnsub)dtrUnsub();
+  const month=$("dtrMonth").value;
+  dtrUnsub=onSnapshot(query(dtrCol,where("month","==",month)),snap=>{
+    dtrData=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>safe(a.employeeName||a.name).localeCompare(safe(b.employeeName||b.name)));
+    renderDtr();updateAttendanceChart();$("alertDtr").textContent=dtrData.length;
+  });
+}
+$("dtrMonth").onchange=loadDtrMonth;
+loadDtrMonth();
 
-    window.deleteReport = async (m) => {
-        if(!confirm("Delete this report and all its data?")) return;
-        const q = query(reportsCol, where("month", "==", m));
-        const snap = await getDocs(q);
-        const batch = writeBatch(db);
-        snap.forEach(doc => batch.delete(doc.ref));
-        batch.delete(doc(savedReportsCol, m));
-        await batch.commit();
-        alert("Deleted.");
-    };
+function renderDtr(){
+  $("dtrBody").innerHTML=dtrData.length?dtrData.map(r=>`
+  <tr>
+    <td class="fw-semibold">${safe(r.employeeName||r.name)}</td><td>${safe(r.travel)}</td><td>${safe(r.leave)}</td>
+    <td>${safe(r.tardyDays)}</td><td>${safe(r.tardyMins)}</td><td>${safe(r.tardyConv)}</td>
+    <td>${safe(r.underDays)}</td><td>${safe(r.underMins)}</td><td>${safe(r.underConv)}</td>
+    <td>${safe(r.totalDays)}</td><td>${safe(r.totalConv)}</td><td>${safe(r.remarks)}</td>
+    <td><button class="btn btn-sm btn-outline-primary edit-dtr" data-id="${r.id}"><i class="bi bi-pencil"></i></button></td>
+  </tr>`).join(""):`<tr><td colspan="13" class="text-center text-muted py-4">No records. Click Load Employees.</td></tr>`;
+  document.querySelectorAll(".edit-dtr").forEach(b=>b.onclick=()=>openDtr(b.dataset.id));
+}
 
-    async function getData(m) {
-        const q = query(reportsCol, where("month", "==", m));
-        const snap = await getDocs(q);
-        const arr = [];
-        snap.forEach(d => arr.push(d.data()));
-        return arr.sort((a,b) => a.name.localeCompare(b.name));
-    }
+$("loadEmployeesMonthBtn").onclick=async()=>{
+  const month=$("dtrMonth").value;
+  const act=activeEmployees();
+  const existingIds=new Set(dtrData.map(x=>x.employeeId).filter(Boolean));
+  const existingNames=new Set(dtrData.map(x=>safe(x.employeeName||x.name).toLowerCase()));
+  const missing=act.filter(e=>!existingIds.has(e.id)&&!existingNames.has(fullName(e).toLowerCase()));
+  if(!missing.length)return alert("All active employees are already loaded.");
+  if(!confirm(`Load ${missing.length} active employees for ${month}?`))return;
+  for(let i=0;i<missing.length;i+=400){
+    const b=writeBatch(db);
+    missing.slice(i,i+400).forEach(e=>b.set(doc(dtrCol),{
+      employeeId:e.id,employeeName:fullName(e),name:fullName(e),month,
+      travel:"",leave:"",tardyDays:"",tardyMins:"",tardyConv:"",
+      underDays:"",underMins:"",underConv:"",totalDays:"",totalConv:"",remarks:""
+    }));
+    await b.commit();
+  }
+};
 
-    // Standard Full Print
-    window.printReport = async (m, title) => {
-        const data = await getData(m);
-        document.getElementById('print-title').innerText = title.toUpperCase();
-        const tbody = document.getElementById('print-table-body');
-        tbody.innerHTML = '';
-        data.forEach(r => {
-            tbody.innerHTML += `
-                <tr>
-                    <td class="text-start" style="padding-left:5px">${r.name}</td>
-                    <td>${r.travel || ''}</td><td>${r.leave || ''}</td>
-                    <td>${r.tardyDays || ''}</td><td>${r.tardyMins || ''}</td><td>${r.tardyConv || ''}</td>
-                    <td>${r.underDays || ''}</td><td>${r.underMins || ''}</td><td>${r.underConv || ''}</td>
-                    <td style="font-weight:bold">${r.totalDays || ''}</td><td style="font-weight:bold">${r.totalConv || ''}</td>
-                    <td class="text-start" style="font-style:italic">${r.remarks || ''}</td>
-                </tr>`;
-        });
-        
-        // Trigger specific print area
-        document.getElementById('print-area').classList.add('active-print');
-        window.print();
-        setTimeout(() => document.getElementById('print-area').classList.remove('active-print'), 500);
-    };
+$("resetMonthBtn").onclick=async()=>{
+  if(!dtrData.length)return alert("No records to reset.");
+  if(!confirm(`Delete all DTR records for ${$("dtrMonth").value}?`))return;
+  for(let i=0;i<dtrData.length;i+=400){
+    const b=writeBatch(db);dtrData.slice(i,i+400).forEach(r=>b.delete(doc(dtrCol,r.id)));await b.commit();
+  }
+};
 
-    // --- NEW: SUMMARY PRINT LOGIC ---
-    window.printSummary = async (m, title) => {
-        const data = await getData(m);
-        document.getElementById('print-summary-title').innerText = "SUMMARY OF TARDINESS & UNDERTIME - " + title.toUpperCase();
-        const tbody = document.getElementById('print-summary-body');
-        tbody.innerHTML = '';
-        
-        // Filter out people with perfect attendance
-        const filtered = data.filter(r => (parseFloat(r.tardyMins)>0 || parseFloat(r.tardyDays)>0 || parseFloat(r.underMins)>0 || parseFloat(r.underDays)>0));
+function recalcDtr(){
+  const tm=+($("dtrTardyMins").value||0), um=+($("dtrUnderMins").value||0);
+  const td=+($("dtrTardyDays").value||0), ud=+($("dtrUnderDays").value||0);
+  const tc=tm/480, uc=um/480;
+  $("dtrTardyConv").value=tc?tc.toFixed(3):"";
+  $("dtrUnderConv").value=uc?uc.toFixed(3):"";
+  $("dtrTotalDays").value=(td+ud)||"";
+  $("dtrTotalConv").value=(tc+uc)?(tc+uc).toFixed(3):"";
+}
+document.querySelectorAll(".calc").forEach(x=>x.oninput=recalcDtr);
 
-        if(filtered.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="5" class="text-center py-4">No tardiness or undertime recorded for this month.</td></tr>';
-        } else {
-            filtered.forEach(r => {
-                const tStr = `${r.tardyDays ? r.tardyDays + 'd ' : ''}${r.tardyMins ? r.tardyMins + 'm' : ''}`;
-                const uStr = `${r.underDays ? r.underDays + 'd ' : ''}${r.underMins ? r.underMins + 'm' : ''}`;
-                tbody.innerHTML += `
-                    <tr>
-                        <td class="text-start" style="padding-left:5px; font-weight:bold;">${r.name}</td>
-                        <td>${tStr || '-'}</td>
-                        <td>${uStr || '-'}</td>
-                        <td style="font-weight:bold; background-color:#f8f9fa;">${r.totalDays || 0} days / ${r.totalConv || 0}</td>
-                        <td class="text-start" style="font-style:italic">${r.remarks || ''}</td>
-                    </tr>`;
-            });
-        }
-        
-        // Trigger specific print area
-        document.getElementById('print-summary-area').classList.add('active-print');
-        window.print();
-        setTimeout(() => document.getElementById('print-summary-area').classList.remove('active-print'), 500);
-    };
+function openDtr(id){
+  const r=dtrData.find(x=>x.id===id);if(!r)return;
+  $("dtrId").value=id;$("dtrEmployeeName").textContent=r.employeeName||r.name;
+  $("dtrTravel").value=safe(r.travel);$("dtrLeave").value=safe(r.leave);
+  $("dtrTardyDays").value=safe(r.tardyDays);$("dtrTardyMins").value=safe(r.tardyMins);
+  $("dtrUnderDays").value=safe(r.underDays);$("dtrUnderMins").value=safe(r.underMins);
+  $("dtrRemarks").value=safe(r.remarks);recalcDtr();modal("dtrModal").show();
+}
+$("saveDtrBtn").onclick=async()=>{
+  const id=$("dtrId").value;
+  await updateDoc(doc(dtrCol,id),{
+    travel:$("dtrTravel").value,leave:$("dtrLeave").value,
+    tardyDays:$("dtrTardyDays").value,tardyMins:$("dtrTardyMins").value,tardyConv:$("dtrTardyConv").value,
+    underDays:$("dtrUnderDays").value,underMins:$("dtrUnderMins").value,underConv:$("dtrUnderConv").value,
+    totalDays:$("dtrTotalDays").value,totalConv:$("dtrTotalConv").value,remarks:$("dtrRemarks").value,
+    updatedAt:serverTimestamp()
+  });
+  modal("dtrModal").hide();
+};
 
-   window.downloadExcel = async (m, title) => {
-        const data = await getData(m);
-        const aoa = [
-            ["DEPARTMENT OF EDUCATION"],
-            ["Region I"],
-            ["San Fernando City (La Union)"],
-            [],
-            ["DAILY TIME RECORD REPORT"],
-            [`For: ${title}`],
-            [], [],
-            ["NAME OF EMPLOYEE","TRAVEL","LEAVE","TARDINESS",null,null,"UNDERTIME",null,null,"GRAND TOTAL",null,"REMARKS"],
-            [null,null,null,"No. of Days","Minutes","Conversion","No. of Days","Minutes","Conversion","No. of Days","Conversion",null]
-        ];
+$("saveDtrReportBtn").onclick=async()=>{
+  if(!dtrData.length)return alert("No DTR records to save.");
+  const m=$("dtrMonth").value,[y,mm]=m.split("-");
+  const label=new Date(+y,+mm-1,1).toLocaleString("en",{month:"long",year:"numeric"});
+  await setDoc(doc(savedReportsCol,m),{reportId:m,month:m,displayName:`DTR - ${label}`,savedAt:serverTimestamp()});
+  alert("Monthly DTR report saved.");
+};
 
-        data.forEach(r => {
-            aoa.push([
-                r.name, r.travel, r.leave,
-                r.tardyDays, r.tardyMins, r.tardyConv,
-                r.underDays, r.underMins, r.underConv,
-                r.totalDays, r.totalConv, r.remarks
-            ]);
-        });
+function updateAttendanceChart(){
+  const ctx=$("attendanceChart"); if(!ctx)return;
+  if(chart)chart.destroy();
+  const f=dtrData.filter(x=>+(x.tardyMins||0)>0||+(x.underMins||0)>0).slice(0,20);
+  chart=new Chart(ctx,{type:"bar",data:{labels:f.map(x=>(x.employeeName||x.name||"").slice(0,18)),datasets:[
+    {label:"Tardiness (mins)",data:f.map(x=>+(x.tardyMins||0))},
+    {label:"Undertime (mins)",data:f.map(x=>+(x.underMins||0))}
+  ]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+}
 
-        const wb = XLSX.utils.book_new();
-        const ws = XLSX.utils.aoa_to_sheet(aoa);
+async function loadSavedReports(){
+  const s=await getDocs(savedReportsCol);
+  const arr=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>safe(b.month).localeCompare(safe(a.month)));
+  $("savedReportsBody").innerHTML=arr.length?arr.map(r=>{
+    const when=r.savedAt?.toDate?r.savedAt.toDate().toLocaleString():"";
+    return `<tr><td class="fw-semibold">${safe(r.displayName)}</td><td>${safe(r.month)}</td><td>${when}</td>
+      <td class="text-end"><button class="btn btn-sm btn-outline-success export-dtr" data-month="${r.month}" data-title="${safe(r.displayName)}"><i class="bi bi-file-earmark-excel"></i></button></td></tr>`;
+  }).join(""):`<tr><td colspan="4" class="text-center text-muted py-4">No saved DTR reports.</td></tr>`;
+  document.querySelectorAll(".export-dtr").forEach(b=>b.onclick=()=>exportDtrMonth(b.dataset.month,b.dataset.title));
+}
+async function exportDtrMonth(month,title){
+  const s=await getDocs(query(dtrCol,where("month","==",month)));
+  const data=s.docs.map(d=>d.data()).sort((a,b)=>safe(a.employeeName||a.name).localeCompare(safe(b.employeeName||b.name)));
+  const rows=data.map(r=>({
+    "Employee":r.employeeName||r.name,"Travel":r.travel,"Leave":r.leave,
+    "Tardy Days":r.tardyDays,"Tardy Minutes":r.tardyMins,"Tardy Conversion":r.tardyConv,
+    "Undertime Days":r.underDays,"Undertime Minutes":r.underMins,"Undertime Conversion":r.underConv,
+    "Total Days":r.totalDays,"Total Conversion":r.totalConv,"Remarks":r.remarks
+  }));
+  exportJson(rows,title||`DTR-${month}`);
+}
 
-       ws['!merges'] = [
-            // --- NEW: Center the main titles across all 12 columns (columns 0 through 11) ---
-            {s:{r:0,c:0}, e:{r:0,c:11}}, // DEPARTMENT OF EDUCATION
-            {s:{r:1,c:0}, e:{r:1,c:11}}, // Region I
-            {s:{r:2,c:0}, e:{r:2,c:11}}, // San Fernando City...
-            {s:{r:4,c:0}, e:{r:4,c:11}}, // DAILY TIME RECORD REPORT
-            {s:{r:5,c:0}, e:{r:5,c:11}}, // For: ...
+/* LEAVE */
+onSnapshot(leaveCol,s=>{leaves=s.docs.map(d=>({id:d.id,...d.data()}));renderLeave();updateDashboard();});
+function renderLeave(){
+  $("leaveBody").innerHTML=leaves.length?leaves.sort((a,b)=>safe(b.dateFiled).localeCompare(safe(a.dateFiled))).map(x=>`
+  <tr><td>${safe(x.employeeName)}</td><td>${safe(x.leaveType)}</td><td>${safe(x.from)} to ${safe(x.to)}</td><td>${safe(x.days)}</td>
+  <td>${safe(x.dateFiled)}</td><td><span class="badge ${x.status==="Approved"?"text-bg-success":x.status==="Pending"?"text-bg-warning":"text-bg-secondary"}">${safe(x.status)}</span></td>
+  <td>${safe(x.remarks)}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger del-leave" data-id="${x.id}"><i class="bi bi-trash"></i></button></td></tr>`).join("")
+  :`<tr><td colspan="8" class="text-center text-muted py-4">No leave records.</td></tr>`;
+  document.querySelectorAll(".del-leave").forEach(b=>b.onclick=async()=>{if(confirm("Delete this leave record?"))await deleteDoc(doc(leaveCol,b.dataset.id));});
+}
+$("addLeaveBtn").onclick=()=>{["leaveId","leaveFrom","leaveTo","leaveDays","leaveFiled","leaveRemarks"].forEach(id=>$(id).value="");$("leaveStatus").value="Pending";modal("leaveModal").show();};
+$("saveLeaveBtn").onclick=async()=>{
+  const emp=employees.find(e=>e.id===$("leaveEmployee").value);if(!emp)return alert("Select an employee.");
+  await addDoc(leaveCol,{employeeId:emp.id,employeeName:fullName(emp),leaveType:$("leaveType").value,from:$("leaveFrom").value,to:$("leaveTo").value,days:$("leaveDays").value,dateFiled:$("leaveFiled").value,status:$("leaveStatus").value,remarks:$("leaveRemarks").value,createdAt:serverTimestamp()});
+  modal("leaveModal").hide();
+};
 
-            // --- Existing merges for the data table headers ---
-            {s:{r:8,c:3},e:{r:8,c:5}}, {s:{r:8,c:6},e:{r:8,c:8}}, {s:{r:8,c:9},e:{r:8,c:10}}, 
-            {s:{r:8,c:0},e:{r:9,c:0}}, {s:{r:8,c:1},e:{r:9,c:1}}, {s:{r:8,c:2},e:{r:9,c:2}}, {s:{r:8,c:11},e:{r:9,c:11}}
-        ];
-        ws['!cols'] = [{wch:30}, {wch:15}, {wch:15}, {wch:10}, {wch:8}, {wch:10}, {wch:10}, {wch:8}, {wch:10}, {wch:10}, {wch:10}, {wch:25}];
+/* 201 FILES */
+onSnapshot(files201Col,s=>{files201=s.docs.map(d=>({id:d.id,...d.data()}));render201();updateDashboard();});
+function render201(){
+  const rows=activeEmployees().sort((a,b)=>fullName(a).localeCompare(fullName(b))).map(e=>{
+    const f=files201.find(x=>x.employeeId===e.id)||{};
+    const complete=!!(f.pds&&f.saln&&f.appointment&&f.tor&&f.eligibility&&f.nbi);
+    const mark=v=>v?'<i class="bi bi-check-circle-fill text-success"></i>':'<i class="bi bi-x-circle-fill text-danger"></i>';
+    return `<tr><td class="fw-semibold">${fullName(e)}</td><td>${mark(f.pds)}</td><td>${mark(f.saln)}</td><td>${mark(f.appointment)}</td><td>${mark(f.tor)}</td><td>${mark(f.eligibility)}</td><td>${mark(f.nbi)}</td>
+    <td><span class="badge ${complete?"text-bg-success":"text-bg-danger"}">${complete?"Complete":"Incomplete"}</span></td>
+    <td class="text-end"><button class="btn btn-sm btn-outline-primary edit-201" data-id="${e.id}"><i class="bi bi-pencil"></i></button></td></tr>`;
+  });
+  $("files201Body").innerHTML=rows.length?rows.join(""):`<tr><td colspan="9" class="text-center text-muted py-4">No active employees.</td></tr>`;
+  document.querySelectorAll(".edit-201").forEach(b=>b.onclick=()=>open201(b.dataset.id));
+}
+function open201(employeeId){
+  const e=employees.find(x=>x.id===employeeId),f=files201.find(x=>x.employeeId===employeeId)||{};
+  $("file201EmployeeId").value=employeeId;$("file201Name").textContent=fullName(e);
+  $("fPds").checked=!!f.pds;$("fSaln").checked=!!f.saln;$("fAppointment").checked=!!f.appointment;$("fTor").checked=!!f.tor;$("fEligibility").checked=!!f.eligibility;$("fNbi").checked=!!f.nbi;
+  modal("file201Modal").show();
+}
+$("save201Btn").onclick=async()=>{
+  const employeeId=$("file201EmployeeId").value,e=employees.find(x=>x.id===employeeId);
+  await setDoc(doc(files201Col,employeeId),{employeeId,employeeName:fullName(e),pds:$("fPds").checked,saln:$("fSaln").checked,appointment:$("fAppointment").checked,tor:$("fTor").checked,eligibility:$("fEligibility").checked,nbi:$("fNbi").checked,updatedAt:serverTimestamp()},{merge:true});
+  modal("file201Modal").hide();
+};
 
-        // --- NEW: Apply Borders, Alignment, and Styling ---
-        const borderStyle = {
-            top: { style: "thin", color: { rgb: "000000" } },
-            bottom: { style: "thin", color: { rgb: "000000" } },
-            left: { style: "thin", color: { rgb: "000000" } },
-            right: { style: "thin", color: { rgb: "000000" } }
-        };
+/* TRAINING */
+onSnapshot(trainingCol,s=>{trainings=s.docs.map(d=>({id:d.id,...d.data()}));renderTraining();updateDashboard();});
+function renderTraining(){
+ $("trainingBody").innerHTML=trainings.length?trainings.map(x=>`<tr><td>${safe(x.employeeName)}</td><td>${safe(x.title)}</td><td>${safe(x.provider)}</td><td>${safe(x.from)} to ${safe(x.to)}</td><td>${safe(x.hours)}</td><td>${safe(x.level)}</td><td>${safe(x.certificate)}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger del-training" data-id="${x.id}"><i class="bi bi-trash"></i></button></td></tr>`).join(""):`<tr><td colspan="8" class="text-center text-muted py-4">No training records.</td></tr>`;
+ document.querySelectorAll(".del-training").forEach(b=>b.onclick=async()=>{if(confirm("Delete this training record?"))await deleteDoc(doc(trainingCol,b.dataset.id));});
+}
+$("addTrainingBtn").onclick=()=>{["trainingId","trainingTitle","trainingProvider","trainingFrom","trainingTo","trainingHours"].forEach(id=>$(id).value="");modal("trainingModal").show();};
+$("saveTrainingBtn").onclick=async()=>{
+ const e=employees.find(x=>x.id===$("trainingEmployee").value);if(!e)return alert("Select an employee.");
+ await addDoc(trainingCol,{employeeId:e.id,employeeName:fullName(e),title:$("trainingTitle").value,provider:$("trainingProvider").value,from:$("trainingFrom").value,to:$("trainingTo").value,hours:$("trainingHours").value,level:$("trainingLevel").value,certificate:$("trainingCertificate").value,createdAt:serverTimestamp()});
+ modal("trainingModal").hide();
+};
 
-        for (let i in ws) {
-            if (i[0] === '!') continue; // Skip metadata keys
-            
-            let cell = ws[i];
-            cell.s = cell.s || {};
-            
-            // Add border to all cells
-            cell.s.border = borderStyle;
-            
-            // Center alignment for all cells
-            cell.s.alignment = { vertical: "center", horizontal: "center", wrapText: true };
+/* PERFORMANCE */
+onSnapshot(performanceCol,s=>{performances=s.docs.map(d=>({id:d.id,...d.data()}));renderPerformance();});
+function renderPerformance(){
+ $("performanceBody").innerHTML=performances.length?performances.map(x=>`<tr><td>${safe(x.employeeName)}</td><td>${safe(x.period)}</td><td>${safe(x.type)}</td><td>${safe(x.rating)}</td><td>${safe(x.adjectival)}</td><td>${safe(x.submission)}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger del-performance" data-id="${x.id}"><i class="bi bi-trash"></i></button></td></tr>`).join(""):`<tr><td colspan="7" class="text-center text-muted py-4">No performance records.</td></tr>`;
+ document.querySelectorAll(".del-performance").forEach(b=>b.onclick=async()=>{if(confirm("Delete this performance record?"))await deleteDoc(doc(performanceCol,b.dataset.id));});
+}
+$("addPerformanceBtn").onclick=()=>{["performanceId","performancePeriod","performanceRating"].forEach(id=>$(id).value="");modal("performanceModal").show();};
+$("savePerformanceBtn").onclick=async()=>{
+ const e=employees.find(x=>x.id===$("performanceEmployee").value);if(!e)return alert("Select an employee.");
+ await addDoc(performanceCol,{employeeId:e.id,employeeName:fullName(e),period:$("performancePeriod").value,type:$("performanceType").value,rating:$("performanceRating").value,adjectival:$("performanceAdjectival").value,submission:$("performanceSubmission").value,createdAt:serverTimestamp()});
+ modal("performanceModal").hide();
+};
 
-            // Apply special styles based on the row number
-            let rowNum = parseInt(i.replace(/\D/g, ''));
-            
-            if (rowNum >= 9 && rowNum <= 10) { 
-                // Table Headers (Rows 9 & 10): Make bold and add light gray background
-                cell.s.font = { bold: true };
-                cell.s.fill = { fgColor: { rgb: "F0F0F0" } }; 
-            } else if (rowNum === 1 || rowNum === 5) {
-                // Title Rows: Make bold
-                cell.s.font = { bold: true, sz: 12 };
-                // Remove borders from the title header area for a cleaner look
-                cell.s.border = {};
-            } else if (rowNum < 9) {
-                // Remove borders from other header text lines
-                cell.s.border = {};
-            }
-        }
-
-        XLSX.utils.book_append_sheet(wb, ws, "DTR");
-        XLSX.writeFile(wb, `${title}.xlsx`);
-    };
-
-    // --- 5. EDIT & CALC ---
-    function recalc() {
-        const tMins = parseFloat(document.getElementById('inpTardyMins').value) || 0;
-        const uMins = parseFloat(document.getElementById('inpUnderMins').value) || 0;
-        const tConv = tMins / 480;
-        const uConv = uMins / 480;
-
-        document.getElementById('inpTardyConv').value = tConv > 0 ? tConv.toFixed(3) : '';
-        document.getElementById('inpUnderConv').value = uConv > 0 ? uConv.toFixed(3) : '';
-
-        const tDays = parseFloat(document.getElementById('inpTardyDays').value) || 0;
-        const uDays = parseFloat(document.getElementById('inpUnderDays').value) || 0;
-
-        const totalDays = tDays + uDays;
-        const totalConv = tConv + uConv;
-        document.getElementById('inpTotalDays').value = totalDays > 0 ? totalDays : '';
-        document.getElementById('inpTotalConv').value = totalConv > 0 ? totalConv.toFixed(3) : '';
-    }
-
-    window.editRec = (id) => {
-        const r = currentReportData.find(x=>x.id===id);
-        if(!r) return;
-        document.getElementById('editId').value = r.id;
-        document.getElementById('editNameDisplay').innerText = r.name;
-        document.getElementById('inpRemarks').value = r.remarks||'';
-        
-        ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
-             document.getElementById(`inp${k}`).value = r[k.charAt(0).toLowerCase()+k.slice(1)]||'';
-        });
-        
-        const inputs = ['inpTardyDays','inpTardyMins','inpUnderDays','inpUnderMins'];
-        inputs.forEach(i => {
-            const el = document.getElementById(i);
-            el.removeEventListener('input', recalc);
-            el.addEventListener('input', recalc);
-        });
-
-        new bootstrap.Modal(document.getElementById('editModal')).show();
-    };
-
-    document.getElementById('btnSave').addEventListener('click', async () => {
-        const id = document.getElementById('editId').value;
-        const payload = { remarks: document.getElementById('inpRemarks').value };
-        ['Travel','Leave','TardyDays','TardyMins','TardyConv','UnderDays','UnderMins','UnderConv','TotalDays','TotalConv'].forEach(k => {
-             payload[k.charAt(0).toLowerCase()+k.slice(1)] = document.getElementById(`inp${k}`).value;
-        });
-        try {
-            await updateDoc(doc(reportsCol, id), payload);
-            const modal = bootstrap.Modal.getInstance(document.getElementById('editModal'));
-            if(modal) modal.hide();
-        } catch(e) {
-            console.error(e);
-            alert('Unable to save this DTR entry: ' + e.message);
-        }
-    });
+/* EXPORTS */
+function exportJson(rows,name){
+ if(!rows.length)return alert("No data to export.");
+ const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);
+ XLSX.utils.book_append_sheet(wb,ws,"Report");XLSX.writeFile(wb,`${name}.xlsx`);
+}
+$("exportEmployeesBtn").onclick=()=>exportJson(employees.map(e=>({
+ "Employee No.":e.employeeNo,"Name":fullName(e),"Position":e.position,"Personnel Type":e.employeeType,
+ "Employment Status":e.employmentStatus,"Plantilla Item":e.plantillaItem,"Salary Grade":e.salaryGrade,"Step":e.step,
+ "School/Office":e.schoolOffice,"Date Hired":e.dateHired,"Email":e.email,"Mobile":e.mobile,"Status":e.status||"Active"
+})),"HR-Employee-Masterlist");
+$("exportLeaveBtn").onclick=()=>exportJson(leaves.map(x=>({"Employee":x.employeeName,"Leave Type":x.leaveType,"From":x.from,"To":x.to,"Days":x.days,"Date Filed":x.dateFiled,"Status":x.status,"Remarks":x.remarks})),"HR-Leave-Register");
+$("exportTrainingBtn").onclick=()=>exportJson(trainings.map(x=>({"Employee":x.employeeName,"Training":x.title,"Provider":x.provider,"From":x.from,"To":x.to,"Hours":x.hours,"Level":x.level,"Certificate":x.certificate})),"HR-Training-Register");
 
 </script>
 </body>
