@@ -341,7 +341,8 @@ body.sidebar-hidden #content{margin-left:0}
 <div class="col-md-3"><label class="form-label">Employee No.</label><input id="empNo" class="form-control"></div>
 <div class="col-md-3"><label class="form-label">Last Name *</label><input id="empLast" class="form-control"></div>
 <div class="col-md-3"><label class="form-label">First Name *</label><input id="empFirst" class="form-control"></div>
-<div class="col-md-3"><label class="form-label">Middle Name</label><input id="empMiddle" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Middle Initial</label><input id="empMiddle" class="form-control" maxlength="5" placeholder="e.g. P."></div>
+<div class="col-12"><div class="alert alert-light border py-2 mb-0 small"><i class="bi bi-info-circle me-1"></i>For existing legacy employee names, clicking <strong>Edit</strong> automatically separates the stored name into Last Name, First Name, and Middle Initial. Please verify compound surnames or compound first names before saving.</div></div>
 <div class="col-md-3"><label class="form-label">Position</label><input id="empPosition" class="form-control"></div>
 <div class="col-md-3"><label class="form-label">Personnel Type</label><select id="empType" class="form-select"><option>Teaching</option><option>Non-Teaching</option></select></div>
 <div class="col-md-3"><label class="form-label">Employment Status</label><select id="empEmployment" class="form-select"><option>Permanent</option><option>Provisional</option><option>Substitute</option><option>Contractual</option><option>COS</option><option>JO</option><option>Others</option></select></div>
@@ -552,11 +553,80 @@ let dtrUnsub=null;
 
 const $ = id => document.getElementById(id);
 const safe = v => String(v ?? "");
+
+function cleanMiddleInitial(value){
+  const s=safe(value).trim().replace(/\.+$/,"");
+  if(!s) return "";
+  // If a complete middle name exists, store/display its first initial.
+  const first=s.split(/\s+/)[0];
+  return first ? first.charAt(0).toUpperCase()+"." : "";
+}
+
+function parseEmployeeName(rawName){
+  let raw=safe(rawName).trim().replace(/\s+/g," ");
+  if(!raw) return {lastName:"",firstName:"",middleInitial:""};
+
+  // Remove common suffixes temporarily so they do not become the middle initial.
+  raw=raw.replace(/\s+(JR\.?|SR\.?|II|III|IV|V)$/i,"").trim();
+
+  let lastName="", firstName="", middleInitial="";
+
+  // Preferred / common HR format: LASTNAME, FIRSTNAME MIDDLE NAME/INITIAL
+  if(raw.includes(",")){
+    const parts=raw.split(",");
+    lastName=safe(parts.shift()).trim();
+    const right=parts.join(",").trim();
+    const tokens=right.split(/\s+/).filter(Boolean);
+
+    if(tokens.length){
+      // Detect final one-letter or dotted token as middle initial.
+      const lastToken=tokens[tokens.length-1] || "";
+      if(/^[A-Za-z]\.?$/.test(lastToken)){
+        middleInitial=cleanMiddleInitial(tokens.pop());
+        firstName=tokens.join(" ");
+      }else if(tokens.length >= 2){
+        // For legacy records such as "DELA CRUZ, JUAN SANTOS",
+        // treat the last token as middle name and convert it to an initial.
+        middleInitial=cleanMiddleInitial(tokens.pop());
+        firstName=tokens.join(" ");
+      }else{
+        firstName=tokens.join(" ");
+      }
+    }
+  }else{
+    // Fallback for "FIRSTNAME MIDDLENAME LASTNAME".
+    const tokens=raw.split(/\s+/).filter(Boolean);
+    if(tokens.length === 1){
+      firstName=tokens[0];
+    }else if(tokens.length === 2){
+      firstName=tokens[0];
+      lastName=tokens[1];
+    }else{
+      firstName=tokens[0];
+      lastName=tokens[tokens.length-1];
+      middleInitial=cleanMiddleInitial(tokens.slice(1,-1).join(" "));
+    }
+  }
+
+  return {
+    lastName:lastName.toUpperCase(),
+    firstName:firstName.toUpperCase(),
+    middleInitial
+  };
+}
+
 const fullName = e => {
+  const ln=safe(e.lastName).trim();
+  const fn=safe(e.firstName).trim();
+  const mi=cleanMiddleInitial(e.middleName || e.middleInitial);
+  if(ln || fn){
+    return `${ln}${ln&&fn?", ":""}${fn}${mi?" "+mi:""}`.trim();
+  }
   if(e.fullName) return e.fullName;
   if(e.name) return e.name;
-  return [e.lastName, e.firstName, e.middleName].filter(Boolean).join(", ").replace(", ,",",");
+  return "";
 };
+
 const activeEmployees = () => employees.filter(e => (e.status || "Active") === "Active");
 
 function showView(name){
@@ -638,22 +708,57 @@ $("addEmployeeBtn").onclick=()=>{clearEmployeeForm();modal("employeeModal").show
 
 function openEmployee(id){
   const e=employees.find(x=>x.id===id); if(!e)return;
-  $("empId").value=id;$("empNo").value=safe(e.employeeNo);$("empLast").value=safe(e.lastName);
-  $("empFirst").value=safe(e.firstName);$("empMiddle").value=safe(e.middleName);$("empPosition").value=safe(e.position);
-  $("empType").value=e.employeeType||"Teaching";$("empEmployment").value=e.employmentStatus||"Permanent";
-  $("empPlantilla").value=safe(e.plantillaItem);$("empSG").value=safe(e.salaryGrade);$("empStep").value=safe(e.step);
-  $("empBasicSalary").value=safe(e.basicSalary);$("empPera").value=safe(e.pera);$("empStation").value=safe(e.stationCode);
-  $("empOffice").value=safe(e.schoolOffice);$("empHired").value=safe(e.dateHired);$("empEmail").value=safe(e.email);
-  $("empMobile").value=safe(e.mobile);$("empStatus").value=e.status||"Active";
+
+  // New records already have structured names.
+  // Legacy imported records may only have "name" or "fullName".
+  let lastName=safe(e.lastName).trim();
+  let firstName=safe(e.firstName).trim();
+  let middleInitial=cleanMiddleInitial(e.middleName || e.middleInitial);
+
+  if(!lastName || !firstName){
+    const parsed=parseEmployeeName(e.fullName || e.name || "");
+    if(!lastName) lastName=parsed.lastName;
+    if(!firstName) firstName=parsed.firstName;
+    if(!middleInitial) middleInitial=parsed.middleInitial;
+  }
+
+  $("empId").value=id;
+  $("empNo").value=safe(e.employeeNo);
+  $("empLast").value=lastName;
+  $("empFirst").value=firstName;
+  $("empMiddle").value=middleInitial;
+  $("empPosition").value=safe(e.position);
+  $("empType").value=e.employeeType||"Teaching";
+  $("empEmployment").value=e.employmentStatus||"Permanent";
+  $("empPlantilla").value=safe(e.plantillaItem);
+  $("empSG").value=safe(e.salaryGrade);
+  $("empStep").value=safe(e.step);
+  $("empBasicSalary").value=safe(e.basicSalary);
+  $("empPera").value=safe(e.pera);
+  $("empStation").value=safe(e.stationCode);
+  $("empOffice").value=safe(e.schoolOffice);
+  $("empHired").value=safe(e.dateHired);
+  $("empEmail").value=safe(e.email);
+  $("empMobile").value=safe(e.mobile);
+  $("empStatus").value=e.status||"Active";
+
   modal("employeeModal").show();
 }
 
 $("saveEmployeeBtn").onclick=async()=>{
   const last=$("empLast").value.trim(), first=$("empFirst").value.trim();
   if(!last||!first) return alert("Last Name and First Name are required.");
+  const middleInitial=cleanMiddleInitial($("empMiddle").value);
+  const normalizedFullName=`${last.toUpperCase()}, ${first.toUpperCase()}${middleInitial?" "+middleInitial:""}`.trim();
   const payload={
-    employeeNo:$("empNo").value.trim(),lastName:last,firstName:first,middleName:$("empMiddle").value.trim(),
-    fullName:[last,first,$("empMiddle").value.trim()].filter(Boolean).join(", "),
+    employeeNo:$("empNo").value.trim(),
+    lastName:last.toUpperCase(),
+    firstName:first.toUpperCase(),
+    middleName:middleInitial,
+    middleInitial:middleInitial,
+    fullName:normalizedFullName,
+    // Keep `name` synchronized for compatibility with older DTR records/functions.
+    name:normalizedFullName,
     position:$("empPosition").value.trim(),employeeType:$("empType").value,employmentStatus:$("empEmployment").value,
     plantillaItem:$("empPlantilla").value.trim(),salaryGrade:$("empSG").value.trim(),step:$("empStep").value.trim(),
     basicSalary:$("empBasicSalary").value,pera:$("empPera").value,stationCode:$("empStation").value.trim(),
@@ -695,8 +800,9 @@ $("importEmployeesBtn").onclick=()=>{
         }
         batchItems.push({
           employeeNo:safe(r["employee no."]||r["employee no"]||r["employee number"]),
-          lastName:ln,firstName:fn,middleName:mn,
-          fullName:[ln,fn,mn].filter(Boolean).join(", "),
+          lastName:ln.toUpperCase(),firstName:fn.toUpperCase(),middleName:cleanMiddleInitial(mn),middleInitial:cleanMiddleInitial(mn),
+          fullName:`${ln.toUpperCase()}${ln&&fn?", ":""}${fn.toUpperCase()}${cleanMiddleInitial(mn)?" "+cleanMiddleInitial(mn):""}`.trim(),
+          name:`${ln.toUpperCase()}${ln&&fn?", ":""}${fn.toUpperCase()}${cleanMiddleInitial(mn)?" "+cleanMiddleInitial(mn):""}`.trim(),
           position:safe(r["position"]||r["designation"]),
           employeeType:safe(r["personnel type"]||r["employee type"]||""),
           employmentStatus:safe(r["employment status"]||r["appointment status"]||""),
