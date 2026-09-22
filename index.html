@@ -52,6 +52,20 @@ body.sidebar-hidden #content{margin-left:0}
   @page{size:landscape;margin:10mm}
 }
 .print-area{display:none}
+.official-report{font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff}
+.official-report .report-head{text-align:center;line-height:1.2;margin-bottom:18px}
+.official-report .report-head h3,.official-report .report-head h4,.official-report .report-head p{margin:2px 0}
+.official-report table{width:100%;border-collapse:collapse;font-size:10px}
+.official-report th,.official-report td{border:1px solid #000;padding:4px 5px;vertical-align:middle}
+.official-report th{text-align:center;font-weight:700}
+.official-report .signatures{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:34px;font-size:10px;text-align:center}
+.official-report .sig-name{font-weight:700;margin-top:26px}
+.report-actions .btn{margin:2px}
+@media print{
+  .official-report{display:block!important}
+  .official-report table{font-size:9px}
+  .official-report .signatures{font-size:9px}
+}
 </style>
 </head>
 <body>
@@ -227,9 +241,29 @@ body.sidebar-hidden #content{margin-left:0}
 
     <!-- CONSOLIDATED -->
     <section id="view-consolidated" class="view">
-      <div class="mb-3"><h4 class="mb-1">Consolidated DTR Reports</h4><div class="small-muted">Saved monthly DTR reports</div></div>
+      <div class="d-flex flex-wrap justify-content-between gap-2 align-items-center mb-3">
+        <div>
+          <h4 class="mb-1">Consolidated DTR Reports</h4>
+          <div class="small-muted">Required monthly reports based on the uploaded DTR reporting templates</div>
+        </div>
+        <button class="btn btn-outline-primary btn-sm" id="reportSettingsBtn">
+          <i class="bi bi-gear-fill me-1"></i> Report Settings / Signatories
+        </button>
+      </div>
+
+      <div class="alert alert-info py-2 small">
+        <strong>Available required reports:</strong> Form 7 – Monthly Payroll Worksheet & Report of Service;
+        HRMO Form No. 6 – Monthly Report of Absences and Undertimes; and Summary of Current Absences Without Pay.
+        Separate report scope is available for regular personnel and the School Head.
+      </div>
+
       <div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive">
-        <table class="table table-hover mb-0"><thead class="table-light"><tr><th>Report</th><th>Month</th><th>Saved</th><th class="text-end">Actions</th></tr></thead><tbody id="savedReportsBody"></tbody></table>
+        <table class="table table-hover mb-0">
+          <thead class="table-light">
+            <tr><th>Month</th><th>Last Saved</th><th>Regular Personnel Reports</th><th>School Head Reports</th><th class="text-end">Excel</th></tr>
+          </thead>
+          <tbody id="savedReportsBody"></tbody>
+        </table>
       </div></div></div>
     </section>
 
@@ -314,6 +348,9 @@ body.sidebar-hidden #content{margin-left:0}
 <div class="col-md-3"><label class="form-label">Plantilla Item</label><input id="empPlantilla" class="form-control"></div>
 <div class="col-md-2"><label class="form-label">Salary Grade</label><input id="empSG" class="form-control"></div>
 <div class="col-md-2"><label class="form-label">Step</label><input id="empStep" class="form-control"></div>
+<div class="col-md-3"><label class="form-label">Basic Salary</label><input type="number" step="0.01" id="empBasicSalary" class="form-control" placeholder="e.g. 36022"></div>
+<div class="col-md-3"><label class="form-label">PERA / ACA</label><input type="number" step="0.01" id="empPera" class="form-control" placeholder="e.g. 2000"></div>
+<div class="col-md-2"><label class="form-label">Station Code</label><input id="empStation" class="form-control" placeholder="e.g. 0543"></div>
 <div class="col-md-4"><label class="form-label">School / Office</label><input id="empOffice" class="form-control"></div>
 <div class="col-md-4"><label class="form-label">Date Hired</label><input type="date" id="empHired" class="form-control"></div>
 <div class="col-md-4"><label class="form-label">Email</label><input type="email" id="empEmail" class="form-control"></div>
@@ -324,24 +361,59 @@ body.sidebar-hidden #content{margin-left:0}
 </div></div></div>
 
 <!-- DTR EDIT MODAL -->
-<div class="modal fade" id="dtrModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
-<div class="modal-header bg-primary text-white"><h5 class="modal-title">Edit DTR Entry</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal fade" id="dtrModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
+<div class="modal-header bg-primary text-white"><h5 class="modal-title">Edit DTR / Required Report Details</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
 <div class="modal-body">
 <input type="hidden" id="dtrId"><h5 id="dtrEmployeeName" class="text-primary mb-3"></h5>
-<div class="row g-3">
-<div class="col-md-6"><label class="form-label">Travel Dates</label><input id="dtrTravel" class="form-control"></div>
-<div class="col-md-6"><label class="form-label">Leave Dates</label><input id="dtrLeave" class="form-control"></div>
-<div class="col-md-3"><label class="form-label">Tardy Days</label><input type="number" id="dtrTardyDays" class="form-control calc"></div>
-<div class="col-md-3"><label class="form-label">Tardy Minutes</label><input type="number" id="dtrTardyMins" class="form-control calc"></div>
-<div class="col-md-3"><label class="form-label">Tardy Conversion</label><input id="dtrTardyConv" class="form-control" readonly></div>
-<div class="col-md-3"><label class="form-label">Total Days</label><input id="dtrTotalDays" class="form-control" readonly></div>
-<div class="col-md-3"><label class="form-label">Undertime Days</label><input type="number" id="dtrUnderDays" class="form-control calc"></div>
-<div class="col-md-3"><label class="form-label">Undertime Minutes</label><input type="number" id="dtrUnderMins" class="form-control calc"></div>
-<div class="col-md-3"><label class="form-label">Undertime Conversion</label><input id="dtrUnderConv" class="form-control" readonly></div>
-<div class="col-md-3"><label class="form-label">Total Conversion</label><input id="dtrTotalConv" class="form-control" readonly></div>
-<div class="col-12"><label class="form-label">Remarks</label><textarea id="dtrRemarks" class="form-control" rows="2"></textarea></div>
-</div></div>
-<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveDtrBtn">Save</button></div>
+
+<div class="border rounded p-3 mb-3">
+  <div class="fw-bold mb-2"><i class="bi bi-calendar-x me-1"></i> Absence / Leave Details</div>
+  <div class="row g-3">
+    <div class="col-md-2"><label class="form-label">No. of Times Absent</label><input type="number" step="0.5" id="dtrAbsenceCount" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">Absences / Inclusive Dates</label><input id="dtrLeave" class="form-control" placeholder="e.g. 7/20/26 or NONE"></div>
+    <div class="col-md-2"><label class="form-label">Cause</label><input id="dtrCause" class="form-control" placeholder="SL, VL, SPL, WL"></div>
+    <div class="col-md-2"><label class="form-label">Vacation Leave Days</label><input type="number" step="0.5" id="dtrVacationDays" class="form-control"></div>
+    <div class="col-md-2"><label class="form-label">Sick Leave Days</label><input type="number" step="0.5" id="dtrSickDays" class="form-control"></div>
+  </div>
+</div>
+
+<div class="border rounded p-3 mb-3">
+  <div class="fw-bold mb-2"><i class="bi bi-clock-history me-1"></i> Undertime Details</div>
+  <div class="row g-3">
+    <div class="col-md-2"><label class="form-label">No. of Times</label><input type="number" id="dtrUnderCount" class="form-control"></div>
+    <div class="col-md-4"><label class="form-label">Date Undertimes</label><input id="dtrUnderDates" class="form-control" placeholder="e.g. 7/10, 7/30/26"></div>
+    <div class="col-md-2"><label class="form-label">Days</label><input type="number" step="0.5" id="dtrUnderDays" class="form-control calc"></div>
+    <div class="col-md-2"><label class="form-label">Hours</label><input type="number" id="dtrUnderHours" class="form-control calc"></div>
+    <div class="col-md-2"><label class="form-label">Minutes</label><input type="number" id="dtrUnderMins" class="form-control calc"></div>
+  </div>
+</div>
+
+<div class="border rounded p-3 mb-3">
+  <div class="fw-bold mb-2"><i class="bi bi-stopwatch me-1"></i> Existing Tardiness Monitoring</div>
+  <div class="row g-3">
+    <div class="col-md-3"><label class="form-label">Tardy Days</label><input type="number" step="0.5" id="dtrTardyDays" class="form-control calc"></div>
+    <div class="col-md-3"><label class="form-label">Tardy Minutes</label><input type="number" id="dtrTardyMins" class="form-control calc"></div>
+    <div class="col-md-3"><label class="form-label">Tardy Conversion</label><input id="dtrTardyConv" class="form-control" readonly></div>
+    <div class="col-md-3"><label class="form-label">Undertime Conversion</label><input id="dtrUnderConv" class="form-control" readonly></div>
+    <div class="col-md-3"><label class="form-label">Grand Total Days</label><input id="dtrTotalDays" class="form-control" readonly></div>
+    <div class="col-md-3"><label class="form-label">Grand Total Conversion</label><input id="dtrTotalConv" class="form-control" readonly></div>
+    <div class="col-md-6"><label class="form-label">Travel Dates</label><input id="dtrTravel" class="form-control"></div>
+  </div>
+</div>
+
+<div class="border rounded p-3">
+  <div class="fw-bold mb-2"><i class="bi bi-file-earmark-text me-1"></i> Payroll / Report Action</div>
+  <div class="row g-3">
+    <div class="col-md-3"><label class="form-label">Pay Status</label>
+      <select id="dtrPayStatus" class="form-select"><option value=""></option><option>WITH PAY</option><option>WITHOUT PAY</option></select>
+    </div>
+    <div class="col-md-3"><label class="form-label">Division Action</label><input id="dtrDivisionAction" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Deduction Basic P/A</label><input id="dtrDeduction" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Remarks</label><input id="dtrRemarks" class="form-control"></div>
+  </div>
+</div>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveDtrBtn">Save DTR Details</button></div>
 </div></div></div>
 
 <!-- GENERIC MODALS -->
@@ -394,9 +466,32 @@ body.sidebar-hidden #content{margin-left:0}
 </div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="savePerformanceBtn">Save</button></div>
 </div></div></div>
 
-<div id="printArea" class="print-area p-3">
-  <h4 class="text-center">SCHOOL HUMAN RESOURCE MONITORING SYSTEM</h4>
-  <h5 class="text-center" id="printTitle"></h5>
+<!-- DTR REPORT SETTINGS -->
+<div class="modal fade" id="reportSettingsModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
+<div class="modal-header bg-primary text-white"><h5 class="modal-title">DTR Report Settings & Signatories</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+  <div class="row g-3">
+    <div class="col-md-6"><label class="form-label">School Name</label><input id="rsSchoolName" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Station Code</label><input id="rsStation" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Region</label><input id="rsRegion" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label">Schools Division Office</label><input id="rsDivision" class="form-control"></div>
+    <div class="col-md-6"><label class="form-label">Form 7 Region / Division Heading</label><input id="rsForm7Division" class="form-control"></div>
+
+    <div class="col-12"><hr><div class="fw-bold">Signatories</div></div>
+    <div class="col-md-3"><label class="form-label">Prepared by</label><input id="rsPreparedBy" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Prepared by - Position</label><input id="rsPreparedTitle" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Certified Correct by</label><input id="rsCertifiedBy" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Certified - Position</label><input id="rsCertifiedTitle" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Administrative Officer</label><input id="rsAdminBy" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Administrative Officer - Position</label><input id="rsAdminTitle" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Approved by</label><input id="rsApprovedBy" class="form-control"></div>
+    <div class="col-md-3"><label class="form-label">Approved by - Position</label><input id="rsApprovedTitle" class="form-control"></div>
+  </div>
+</div>
+<div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveReportSettingsBtn">Save Settings</button></div>
+</div></div></div>
+
+<div id="printArea" class="print-area p-2">
   <div id="printContent"></div>
 </div>
 
@@ -433,6 +528,24 @@ const leaveCol = collection(db,"leave_records");
 const files201Col = collection(db,"files_201");
 const trainingCol = collection(db,"training_records");
 const performanceCol = collection(db,"performance_records");
+const dtrReportSettingsDoc = doc(db,"system_settings","dtr_report_settings");
+
+const DEFAULT_REPORT_SETTINGS = {
+  schoolName:"DR. MANUEL T. CASES SR. NATIONAL HIGH SCHOOL",
+  station:"0543",
+  region:"Region 1",
+  division:"LA UNION SCHOOLS DIVISION OFFICE",
+  form7Division:"REGION I - Division of LA UNION (SEC)",
+  preparedBy:"KATRINA P. LIMPAG",
+  preparedTitle:"Administrative Assistant II",
+  certifiedBy:"JEFFREY O. BALLESTEROS, PhD",
+  certifiedTitle:"School Principal I",
+  adminBy:"ATTY. RHEA JOY L. CARBONELL",
+  adminTitle:"Chief Administrative Officer V / OIC-Office of the Administrative Officer V",
+  approvedBy:"DR. EMELYN C. HOBAYAN, CESE",
+  approvedTitle:"OIC-Assistant Schools Division Superintendent"
+};
+let reportSettings={...DEFAULT_REPORT_SETTINGS};
 
 let employees=[], dtrData=[], leaves=[], files201=[], trainings=[], performances=[], chart=null;
 let dtrUnsub=null;
@@ -518,7 +631,7 @@ onSnapshot(employeesCol,s=>{
 ["employeeSearch","employeeTypeFilter","employeeStatusFilter"].forEach(id=>$(id).addEventListener("input",renderEmployees));
 
 function clearEmployeeForm(){
-  ["empId","empNo","empLast","empFirst","empMiddle","empPosition","empPlantilla","empSG","empStep","empOffice","empHired","empEmail","empMobile"].forEach(id=>$(id).value="");
+  ["empId","empNo","empLast","empFirst","empMiddle","empPosition","empPlantilla","empSG","empStep","empBasicSalary","empPera","empStation","empOffice","empHired","empEmail","empMobile"].forEach(id=>$(id).value="");
   $("empType").value="Teaching";$("empEmployment").value="Permanent";$("empStatus").value="Active";
 }
 $("addEmployeeBtn").onclick=()=>{clearEmployeeForm();modal("employeeModal").show();};
@@ -529,6 +642,7 @@ function openEmployee(id){
   $("empFirst").value=safe(e.firstName);$("empMiddle").value=safe(e.middleName);$("empPosition").value=safe(e.position);
   $("empType").value=e.employeeType||"Teaching";$("empEmployment").value=e.employmentStatus||"Permanent";
   $("empPlantilla").value=safe(e.plantillaItem);$("empSG").value=safe(e.salaryGrade);$("empStep").value=safe(e.step);
+  $("empBasicSalary").value=safe(e.basicSalary);$("empPera").value=safe(e.pera);$("empStation").value=safe(e.stationCode);
   $("empOffice").value=safe(e.schoolOffice);$("empHired").value=safe(e.dateHired);$("empEmail").value=safe(e.email);
   $("empMobile").value=safe(e.mobile);$("empStatus").value=e.status||"Active";
   modal("employeeModal").show();
@@ -542,6 +656,7 @@ $("saveEmployeeBtn").onclick=async()=>{
     fullName:[last,first,$("empMiddle").value.trim()].filter(Boolean).join(", "),
     position:$("empPosition").value.trim(),employeeType:$("empType").value,employmentStatus:$("empEmployment").value,
     plantillaItem:$("empPlantilla").value.trim(),salaryGrade:$("empSG").value.trim(),step:$("empStep").value.trim(),
+    basicSalary:$("empBasicSalary").value,pera:$("empPera").value,stationCode:$("empStation").value.trim(),
     schoolOffice:$("empOffice").value.trim(),dateHired:$("empHired").value,email:$("empEmail").value.trim(),
     mobile:$("empMobile").value.trim(),status:$("empStatus").value,updatedAt:serverTimestamp()
   };
@@ -585,6 +700,9 @@ $("importEmployeesBtn").onclick=()=>{
           position:safe(r["position"]||r["designation"]),
           employeeType:safe(r["personnel type"]||r["employee type"]||""),
           employmentStatus:safe(r["employment status"]||r["appointment status"]||""),
+          basicSalary:safe(r["basic salary"]||r["salary"]),
+          pera:safe(r["pera/aca"]||r["pera"]||r["aca"]),
+          stationCode:safe(r["station code"]||r["station"]),
           schoolOffice:safe(r["school/office"]||r["school office"]||r["office"]||r["school"]),
           status:"Active",createdAt:serverTimestamp(),updatedAt:serverTimestamp()
         });
@@ -656,9 +774,13 @@ $("resetMonthBtn").onclick=async()=>{
 };
 
 function recalcDtr(){
-  const tm=+($("dtrTardyMins").value||0), um=+($("dtrUnderMins").value||0);
-  const td=+($("dtrTardyDays").value||0), ud=+($("dtrUnderDays").value||0);
-  const tc=tm/480, uc=um/480;
+  const tm=+($("dtrTardyMins").value||0);
+  const td=+($("dtrTardyDays").value||0);
+  const ud=+($("dtrUnderDays").value||0);
+  const uh=+($("dtrUnderHours").value||0);
+  const um=+($("dtrUnderMins").value||0);
+  const tc=tm/480;
+  const uc=ud+(uh/8)+(um/480);
   $("dtrTardyConv").value=tc?tc.toFixed(3):"";
   $("dtrUnderConv").value=uc?uc.toFixed(3):"";
   $("dtrTotalDays").value=(td+ud)||"";
@@ -669,18 +791,51 @@ document.querySelectorAll(".calc").forEach(x=>x.oninput=recalcDtr);
 function openDtr(id){
   const r=dtrData.find(x=>x.id===id);if(!r)return;
   $("dtrId").value=id;$("dtrEmployeeName").textContent=r.employeeName||r.name;
-  $("dtrTravel").value=safe(r.travel);$("dtrLeave").value=safe(r.leave);
-  $("dtrTardyDays").value=safe(r.tardyDays);$("dtrTardyMins").value=safe(r.tardyMins);
-  $("dtrUnderDays").value=safe(r.underDays);$("dtrUnderMins").value=safe(r.underMins);
-  $("dtrRemarks").value=safe(r.remarks);recalcDtr();modal("dtrModal").show();
+  $("dtrTravel").value=safe(r.travel);
+  $("dtrLeave").value=safe(r.leave||r.absenceDates);
+  $("dtrAbsenceCount").value=safe(r.absenceCount);
+  $("dtrCause").value=safe(r.cause);
+  $("dtrVacationDays").value=safe(r.vacationLeaveDays);
+  $("dtrSickDays").value=safe(r.sickLeaveDays);
+  $("dtrUnderCount").value=safe(r.underCount);
+  $("dtrUnderDates").value=safe(r.underDates);
+  $("dtrUnderDays").value=safe(r.underDays);
+  $("dtrUnderHours").value=safe(r.underHours);
+  $("dtrUnderMins").value=safe(r.underMins);
+  $("dtrTardyDays").value=safe(r.tardyDays);
+  $("dtrTardyMins").value=safe(r.tardyMins);
+  $("dtrPayStatus").value=safe(r.payStatus || (/^(WITH|WITHOUT) PAY$/i.test(safe(r.remarks)) ? safe(r.remarks).toUpperCase() : ""));
+  $("dtrDivisionAction").value=safe(r.divisionAction);
+  $("dtrDeduction").value=safe(r.deduction);
+  $("dtrRemarks").value=safe(r.remarks);
+  recalcDtr();
+  modal("dtrModal").show();
 }
 $("saveDtrBtn").onclick=async()=>{
   const id=$("dtrId").value;
   await updateDoc(doc(dtrCol,id),{
-    travel:$("dtrTravel").value,leave:$("dtrLeave").value,
-    tardyDays:$("dtrTardyDays").value,tardyMins:$("dtrTardyMins").value,tardyConv:$("dtrTardyConv").value,
-    underDays:$("dtrUnderDays").value,underMins:$("dtrUnderMins").value,underConv:$("dtrUnderConv").value,
-    totalDays:$("dtrTotalDays").value,totalConv:$("dtrTotalConv").value,remarks:$("dtrRemarks").value,
+    travel:$("dtrTravel").value,
+    leave:$("dtrLeave").value,
+    absenceDates:$("dtrLeave").value,
+    absenceCount:$("dtrAbsenceCount").value,
+    cause:$("dtrCause").value,
+    vacationLeaveDays:$("dtrVacationDays").value,
+    sickLeaveDays:$("dtrSickDays").value,
+    tardyDays:$("dtrTardyDays").value,
+    tardyMins:$("dtrTardyMins").value,
+    tardyConv:$("dtrTardyConv").value,
+    underCount:$("dtrUnderCount").value,
+    underDates:$("dtrUnderDates").value,
+    underDays:$("dtrUnderDays").value,
+    underHours:$("dtrUnderHours").value,
+    underMins:$("dtrUnderMins").value,
+    underConv:$("dtrUnderConv").value,
+    payStatus:$("dtrPayStatus").value,
+    divisionAction:$("dtrDivisionAction").value,
+    deduction:$("dtrDeduction").value,
+    totalDays:$("dtrTotalDays").value,
+    totalConv:$("dtrTotalConv").value,
+    remarks:$("dtrRemarks").value,
     updatedAt:serverTimestamp()
   });
   modal("dtrModal").hide();
@@ -697,11 +852,216 @@ $("saveDtrReportBtn").onclick=async()=>{
 function updateAttendanceChart(){
   const ctx=$("attendanceChart"); if(!ctx)return;
   if(chart)chart.destroy();
-  const f=dtrData.filter(x=>+(x.tardyMins||0)>0||+(x.underMins||0)>0).slice(0,20);
+  const underTotalMins=x=>(+(x.underDays||0)*480)+(+(x.underHours||0)*60)+ +(x.underMins||0);
+  const f=dtrData.filter(x=>+(x.tardyMins||0)>0||underTotalMins(x)>0).slice(0,20);
   chart=new Chart(ctx,{type:"bar",data:{labels:f.map(x=>(x.employeeName||x.name||"").slice(0,18)),datasets:[
     {label:"Tardiness (mins)",data:f.map(x=>+(x.tardyMins||0))},
-    {label:"Undertime (mins)",data:f.map(x=>+(x.underMins||0))}
+    {label:"Undertime (mins)",data:f.map(x=>underTotalMins(x))}
   ]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
+}
+
+async function loadReportSettings(){
+  try{
+    const s=await getDoc(dtrReportSettingsDoc);
+    if(s.exists()) reportSettings={...DEFAULT_REPORT_SETTINGS,...s.data()};
+  }catch(e){ console.warn("Report settings could not be loaded",e); }
+}
+await loadReportSettings();
+
+$("reportSettingsBtn").onclick=()=>{
+  $("rsSchoolName").value=reportSettings.schoolName||"";
+  $("rsStation").value=reportSettings.station||"";
+  $("rsRegion").value=reportSettings.region||"";
+  $("rsDivision").value=reportSettings.division||"";
+  $("rsForm7Division").value=reportSettings.form7Division||"";
+  $("rsPreparedBy").value=reportSettings.preparedBy||"";
+  $("rsPreparedTitle").value=reportSettings.preparedTitle||"";
+  $("rsCertifiedBy").value=reportSettings.certifiedBy||"";
+  $("rsCertifiedTitle").value=reportSettings.certifiedTitle||"";
+  $("rsAdminBy").value=reportSettings.adminBy||"";
+  $("rsAdminTitle").value=reportSettings.adminTitle||"";
+  $("rsApprovedBy").value=reportSettings.approvedBy||"";
+  $("rsApprovedTitle").value=reportSettings.approvedTitle||"";
+  modal("reportSettingsModal").show();
+};
+$("saveReportSettingsBtn").onclick=async()=>{
+  reportSettings={
+    schoolName:$("rsSchoolName").value.trim(),station:$("rsStation").value.trim(),
+    region:$("rsRegion").value.trim(),division:$("rsDivision").value.trim(),
+    form7Division:$("rsForm7Division").value.trim(),
+    preparedBy:$("rsPreparedBy").value.trim(),preparedTitle:$("rsPreparedTitle").value.trim(),
+    certifiedBy:$("rsCertifiedBy").value.trim(),certifiedTitle:$("rsCertifiedTitle").value.trim(),
+    adminBy:$("rsAdminBy").value.trim(),adminTitle:$("rsAdminTitle").value.trim(),
+    approvedBy:$("rsApprovedBy").value.trim(),approvedTitle:$("rsApprovedTitle").value.trim()
+  };
+  await setDoc(dtrReportSettingsDoc,{...reportSettings,updatedAt:serverTimestamp()},{merge:true});
+  modal("reportSettingsModal").hide();
+  alert("DTR report settings saved.");
+};
+
+function monthText(month){
+  const [y,m]=month.split("-");
+  return new Date(+y,+m-1,1).toLocaleString("en-US",{month:"long",year:"numeric"}).toUpperCase();
+}
+function empForRecord(r){
+  return employees.find(e=>e.id===r.employeeId) ||
+         employees.find(e=>fullName(e).toLowerCase()===safe(r.employeeName||r.name).toLowerCase()) || {};
+}
+function isSchoolHeadRecord(r){
+  const e=empForRecord(r);
+  const pos=safe(e.position||r.position).toUpperCase();
+  return /PRINCIPAL|SCHOOL HEAD/.test(pos);
+}
+function recordInScope(r,scope){ return scope==="head" ? isSchoolHeadRecord(r) : !isSchoolHeadRecord(r); }
+function noneIfBlank(v){ const s=safe(v).trim(); return s || "NONE"; }
+function payRemark(r){
+  return safe(r.payStatus).trim() || (/^(WITH|WITHOUT) PAY$/i.test(safe(r.remarks).trim()) ? safe(r.remarks).trim().toUpperCase() : safe(r.remarks).trim());
+}
+function undertimeDisplay(r){
+  const parts=[];
+  const d=+(r.underDays||0),h=+(r.underHours||0),m=+(r.underMins||0);
+  if(d)parts.push(`${d} day${d===1?"":"s"}`);
+  if(h)parts.push(`${h} hr${h===1?"":"s"}`);
+  if(m)parts.push(`${m} min${m===1?"":"s"}`);
+  return parts.length?parts.join(" "):"NONE";
+}
+function absenceCount(r){
+  const v=safe(r.absenceCount).trim();
+  if(v)return v;
+  const dates=safe(r.absenceDates||r.leave).trim();
+  return dates && dates.toUpperCase()!=="NONE" ? 1 : "NONE";
+}
+function underCount(r){
+  const v=safe(r.underCount).trim();
+  if(v)return v;
+  return ((+(r.underDays||0))+(+(r.underHours||0))+(+(r.underMins||0)))>0 ? 1 : "NONE";
+}
+function htmlEsc(v){
+  return safe(v).replace(/[&<>"']/g,ch=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[ch]));
+}
+async function getMonthRecords(month,scope){
+  const snap=await getDocs(query(dtrCol,where("month","==",month)));
+  return snap.docs.map(d=>({id:d.id,...d.data()}))
+    .filter(r=>recordInScope(r,scope))
+    .sort((a,b)=>safe(a.employeeName||a.name).localeCompare(safe(b.employeeName||b.name)));
+}
+function sigBlock(label,name,title){
+  return `<div><div>${htmlEsc(label)}</div><div class="sig-name">${htmlEsc(name)}</div><div>${htmlEsc(title)}</div></div>`;
+}
+
+function form7Html(month,rows,scope){
+  const body=rows.map(r=>{
+    const e=empForRecord(r);
+    return `<tr>
+      <td>${htmlEsc(e.employeeNo||r.employeeNo)}</td>
+      <td style="text-align:left">${htmlEsc(r.employeeName||r.name)}</td>
+      <td>${htmlEsc(e.position||r.position)}</td>
+      <td>${e.basicSalary?`P ${htmlEsc(e.basicSalary)}`:""}</td>
+      <td>${htmlEsc(e.pera)}</td>
+      <td>${htmlEsc(noneIfBlank(r.absenceDates||r.leave))}</td>
+      <td>${htmlEsc(undertimeDisplay(r))}</td>
+      <td>${htmlEsc(r.cause)}</td>
+      <td>${htmlEsc(r.divisionAction)}</td>
+      <td>${htmlEsc(r.deduction)}</td>
+      <td>${htmlEsc(payRemark(r))}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="official-report">
+    <div class="report-head">
+      <h3 style="font-size:16px">DEPARTMENT OF EDUCATION</h3>
+      <h4 style="font-size:14px">${htmlEsc(reportSettings.form7Division)}</h4>
+      <h4 style="font-size:13px">Implementation of Programs for Basic Education</h4>
+      <h4 style="font-size:13px">Monthly Payroll Worksheet &amp; Report of Service</h4>
+      <h4 style="font-size:13px">For the Month of ${monthText(month)}</h4>
+      ${scope==="head"?'<div style="font-size:10px;margin-top:3px">SCHOOL HEAD</div>':""}
+    </div>
+    <table><thead><tr>
+      <th>Employee No.</th><th>Name</th><th>Position Title</th><th>BASIC SALARY</th><th>PERA/ACA</th>
+      <th>ABSENCES/ INCLUSIVE DATES</th><th>UNDERTIMES<br>DY/HR/MINS</th><th>CAUSE</th><th>DIVISION ACTION</th>
+      <th>DEDUCTION<br>BASIC P/A</th><th>REMARKS</th>
+    </tr></thead><tbody>${body||'<tr><td colspan="11" style="text-align:center">No records for this scope.</td></tr>'}</tbody></table>
+    <div class="signatures" style="grid-template-columns:1fr 1fr 1fr">
+      ${sigBlock("CERTIFIED CORRECT:",reportSettings.certifiedBy,reportSettings.certifiedTitle)}
+      ${sigBlock("",reportSettings.adminBy,reportSettings.adminTitle)}
+      ${sigBlock("APPROVED BY:",reportSettings.approvedBy,reportSettings.approvedTitle)}
+    </div>
+  </div>`;
+}
+
+function mrauHtml(month,rows,scope){
+  const body=rows.map((r,i)=>{
+    const e=empForRecord(r);
+    return `<tr>
+      <td>${i+1}</td><td style="text-align:left">${htmlEsc(r.employeeName||r.name)}</td><td>${htmlEsc(e.employeeNo||r.employeeNo)}</td>
+      <td>${htmlEsc(absenceCount(r))}</td><td>${htmlEsc(noneIfBlank(r.absenceDates||r.leave))}</td>
+      <td>${htmlEsc(underCount(r))}</td><td>${htmlEsc(noneIfBlank(r.underDates))}</td><td>${htmlEsc(undertimeDisplay(r))}</td>
+      <td>${htmlEsc(r.vacationLeaveDays)}</td><td>${htmlEsc(r.sickLeaveDays)}</td><td>${htmlEsc(payRemark(r))}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="official-report">
+    <table style="margin-bottom:0"><tr>
+      <td style="border:0;width:20%;text-align:left"><strong>HRMO Form No. 6</strong><br>Revised 2005<br>Department of Education<br>${htmlEsc(reportSettings.region)}</td>
+      <td style="border:0;width:35%;text-align:center"><h3 style="font-size:15px;margin:0">${htmlEsc(reportSettings.division)}</h3></td>
+      <td style="border:0;text-align:center"><h3 style="font-size:15px;margin:0">MONTHLY REPORT OF ABSENCES AND UNDERTIMES</h3><div>For the Month of: <strong>${monthText(month)}</strong></div>${scope==="head"?'<strong>SCHOOL HEAD</strong>':""}</td>
+    </tr></table>
+    <table><thead>
+      <tr><th rowspan="2">#</th><th rowspan="2">Name</th><th rowspan="2">Employee No.</th><th rowspan="2">No. of Times Absent</th>
+      <th rowspan="2">Dates Absent</th><th rowspan="2">No. of Times Undertime</th><th rowspan="2">Date Undertimes</th>
+      <th rowspan="2">Total Undertimes (Hrs./Mins.)</th><th colspan="2">Total No. of Days</th><th rowspan="2">Remarks</th></tr>
+      <tr><th>Vacation Leave</th><th>Sick Leave</th></tr>
+    </thead><tbody>${body||'<tr><td colspan="11" style="text-align:center">No records for this scope.</td></tr>'}</tbody></table>
+    <div class="signatures">
+      ${sigBlock("Prepared by:",reportSettings.preparedBy,reportSettings.preparedTitle)}
+      ${sigBlock("Certified Correct by:",reportSettings.certifiedBy,reportSettings.certifiedTitle)}
+      ${sigBlock("",reportSettings.adminBy,reportSettings.adminTitle)}
+      ${sigBlock("Approved by:",reportSettings.approvedBy,reportSettings.approvedTitle)}
+    </div>
+  </div>`;
+}
+
+function summaryRows(rows){
+  return rows.filter(r=>{
+    const without=safe(r.payStatus).toUpperCase()==="WITHOUT PAY";
+    const under=(+(r.underDays||0))+(+(r.underHours||0))+(+(r.underMins||0))>0;
+    const deduction=safe(r.deduction).trim()!=="";
+    return without || under || deduction;
+  });
+}
+function summaryHtml(month,rows,scope){
+  const filtered=summaryRows(rows);
+  const body=filtered.map(r=>{
+    const e=empForRecord(r);
+    const inclusive=noneIfBlank(r.underDates || r.absenceDates || r.leave);
+    return `<tr>
+      <td>${htmlEsc(e.stationCode||reportSettings.station)}</td><td>${htmlEsc(e.employeeNo||r.employeeNo)}</td>
+      <td style="text-align:left">${htmlEsc(r.employeeName||r.name)}</td><td>${htmlEsc(inclusive)}</td>
+      <td>${htmlEsc(r.underDays || (safe(r.payStatus).toUpperCase()==="WITHOUT PAY"?r.absenceCount:""))}</td>
+      <td>${htmlEsc(r.underHours)}</td><td>${htmlEsc(r.underMins)}</td><td>${htmlEsc(payRemark(r))}</td>
+    </tr>`;
+  }).join("");
+  return `<div class="official-report">
+    <div class="report-head">
+      <h3 style="font-size:16px">${htmlEsc(reportSettings.schoolName)}</h3>
+      <h3 style="font-size:15px">SUMMARY OF CURRENT ABSENCES OF TEACHERS WITHOUT PAY</h3>
+      <h3 style="font-size:14px">FOR THE MONTH OF ${monthText(month)}</h3>
+      ${scope==="head"?'<div style="font-size:10px">SCHOOL HEAD</div>':""}
+    </div>
+    <table><thead><tr><th>STATION</th><th>EMPLOYEE NO.</th><th>NAME</th><th>INCLUSIVE DATE/S</th><th>TOTAL DAYS</th><th>HOURS</th><th>MINUTES</th><th>REMARKS</th></tr></thead>
+    <tbody>${body}<tr><td colspan="8" style="text-align:center">*** nothing follows ***</td></tr></tbody></table>
+    <div class="signatures" style="grid-template-columns:1fr 1fr">
+      ${sigBlock("Prepared by:",reportSettings.preparedBy,reportSettings.preparedTitle)}
+      ${sigBlock("Noted:",reportSettings.certifiedBy,reportSettings.certifiedTitle)}
+    </div>
+  </div>`;
+}
+async function printRequiredReport(type,month,scope){
+  const rows=await getMonthRecords(month,scope);
+  let html="";
+  if(type==="form7")html=form7Html(month,rows,scope);
+  if(type==="mrau")html=mrauHtml(month,rows,scope);
+  if(type==="summary")html=summaryHtml(month,rows,scope);
+  $("printContent").innerHTML=html;
+  setTimeout(()=>window.print(),100);
 }
 
 async function loadSavedReports(){
@@ -709,21 +1069,101 @@ async function loadSavedReports(){
   const arr=s.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>safe(b.month).localeCompare(safe(a.month)));
   $("savedReportsBody").innerHTML=arr.length?arr.map(r=>{
     const when=r.savedAt?.toDate?r.savedAt.toDate().toLocaleString():"";
-    return `<tr><td class="fw-semibold">${safe(r.displayName)}</td><td>${safe(r.month)}</td><td>${when}</td>
-      <td class="text-end"><button class="btn btn-sm btn-outline-success export-dtr" data-month="${r.month}" data-title="${safe(r.displayName)}"><i class="bi bi-file-earmark-excel"></i></button></td></tr>`;
-  }).join(""):`<tr><td colspan="4" class="text-center text-muted py-4">No saved DTR reports.</td></tr>`;
-  document.querySelectorAll(".export-dtr").forEach(b=>b.onclick=()=>exportDtrMonth(b.dataset.month,b.dataset.title));
+    return `<tr>
+      <td class="fw-semibold">${monthText(r.month)}</td><td class="small text-muted">${when}</td>
+      <td class="report-actions">
+        <button class="btn btn-sm btn-outline-primary req-print" data-type="form7" data-scope="regular" data-month="${r.month}">Form 7</button>
+        <button class="btn btn-sm btn-outline-warning req-print" data-type="mrau" data-scope="regular" data-month="${r.month}">HRMO Form 6</button>
+        <button class="btn btn-sm btn-outline-danger req-print" data-type="summary" data-scope="regular" data-month="${r.month}">Without Pay</button>
+      </td>
+      <td class="report-actions">
+        <button class="btn btn-sm btn-outline-primary req-print" data-type="form7" data-scope="head" data-month="${r.month}">Form 7</button>
+        <button class="btn btn-sm btn-outline-warning req-print" data-type="mrau" data-scope="head" data-month="${r.month}">HRMO Form 6</button>
+        <button class="btn btn-sm btn-outline-danger req-print" data-type="summary" data-scope="head" data-month="${r.month}">Without Pay</button>
+      </td>
+      <td class="text-end"><button class="btn btn-sm btn-success export-required" data-month="${r.month}"><i class="bi bi-file-earmark-excel me-1"></i> All Required Reports</button></td>
+    </tr>`;
+  }).join(""):`<tr><td colspan="5" class="text-center text-muted py-4">No saved DTR reports.</td></tr>`;
+  document.querySelectorAll(".req-print").forEach(b=>b.onclick=()=>printRequiredReport(b.dataset.type,b.dataset.month,b.dataset.scope));
+  document.querySelectorAll(".export-required").forEach(b=>b.onclick=()=>exportRequiredReports(b.dataset.month));
 }
-async function exportDtrMonth(month,title){
-  const s=await getDocs(query(dtrCol,where("month","==",month)));
-  const data=s.docs.map(d=>d.data()).sort((a,b)=>safe(a.employeeName||a.name).localeCompare(safe(b.employeeName||b.name)));
-  const rows=data.map(r=>({
-    "Employee":r.employeeName||r.name,"Travel":r.travel,"Leave":r.leave,
-    "Tardy Days":r.tardyDays,"Tardy Minutes":r.tardyMins,"Tardy Conversion":r.tardyConv,
-    "Undertime Days":r.underDays,"Undertime Minutes":r.underMins,"Undertime Conversion":r.underConv,
-    "Total Days":r.totalDays,"Total Conversion":r.totalConv,"Remarks":r.remarks
-  }));
-  exportJson(rows,title||`DTR-${month}`);
+
+function styleSheet(ws,headerRows=[]){
+  const range=XLSX.utils.decode_range(ws["!ref"]||"A1:A1");
+  for(let R=range.s.r;R<=range.e.r;R++){
+    for(let C=range.s.c;C<=range.e.c;C++){
+      const addr=XLSX.utils.encode_cell({r:R,c:C});
+      if(!ws[addr])continue;
+      ws[addr].s=ws[addr].s||{};
+      ws[addr].s.alignment={vertical:"center",horizontal:"center",wrapText:true};
+      if(headerRows.includes(R)){
+        ws[addr].s.font={bold:true};
+        ws[addr].s.fill={fgColor:{rgb:"E9ECEF"}};
+      }
+      if(R>=Math.min(...headerRows,999)){
+        ws[addr].s.border={top:{style:"thin",color:{rgb:"000000"}},bottom:{style:"thin",color:{rgb:"000000"}},left:{style:"thin",color:{rgb:"000000"}},right:{style:"thin",color:{rgb:"000000"}}};
+      }
+    }
+  }
+}
+
+function makeForm7Sheet(month,rows,scope){
+  const aoa=[
+    ["DEPARTMENT OF EDUCATION"],[reportSettings.form7Division],["Implementation of Programs for Basic Education"],
+    ["Monthly Payroll Worksheet & Report of Service"],[`For the Month of ${monthText(month)}`],[scope==="head"?"SCHOOL HEAD":""],[],[],[],[],
+    ["Employee No.","Name","Position Title","BASIC SALARY","PERA/ACA","ABSENCES/ INCLUSIVE DATES","UNDERTIMES DY/HR/MINS","CAUSE","DIVISION ACTION","DEDUCTION BASIC P/A","REMARKS"]
+  ];
+  rows.forEach(r=>{const e=empForRecord(r);aoa.push([
+    e.employeeNo||r.employeeNo,r.employeeName||r.name,e.position||r.position,e.basicSalary?`P ${e.basicSalary}`:"",e.pera||"",
+    noneIfBlank(r.absenceDates||r.leave),undertimeDisplay(r),r.cause||"",r.divisionAction||"",r.deduction||"",payRemark(r)
+  ]);});
+  aoa.push([],["CERTIFIED CORRECT:","","","","","","","APPROVED BY:"],[],[reportSettings.certifiedBy,"",reportSettings.adminBy,"","","","",reportSettings.approvedBy],[reportSettings.certifiedTitle,"",reportSettings.adminTitle,"","","","",reportSettings.approvedTitle]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"]=[0,1,2,3,4,5].map(r=>({s:{r,c:0},e:{r,c:10}}));
+  ws["!cols"]=[{wch:14},{wch:30},{wch:20},{wch:14},{wch:12},{wch:25},{wch:18},{wch:12},{wch:16},{wch:16},{wch:16}];
+  styleSheet(ws,[10]);
+  return ws;
+}
+function makeMrauSheet(month,rows,scope){
+  const aoa=[
+    ["HRMO Form No. 6","",reportSettings.division,"","","","MONTHLY REPORT OF ABSENCES AND UNDERTIMES","","","",""],
+    ["Revised 2005"],["Department of Education","","","","","","For the Month of: "+monthText(month)], [reportSettings.region],
+    ["#","Name","Employee No.","No. of Times Absent","Dates Absent","No. of Times Undertime","Date Undertimes","Total Undertimes (Hrs./Mins.)","Total No. of Days","","Remarks"],
+    ["","","","","","","","","Vacation Leave","Sick Leave",""]
+  ];
+  rows.forEach((r,i)=>{const e=empForRecord(r);aoa.push([i+1,r.employeeName||r.name,e.employeeNo||r.employeeNo,absenceCount(r),noneIfBlank(r.absenceDates||r.leave),underCount(r),noneIfBlank(r.underDates),undertimeDisplay(r),r.vacationLeaveDays||"",r.sickLeaveDays||"",payRemark(r)]);});
+  aoa.push([],["Prepared by:","","Certified Correct by:","","","","","","Approved by:"],[],[reportSettings.preparedBy,"",reportSettings.certifiedBy,"","","",reportSettings.adminBy,"",reportSettings.approvedBy],[reportSettings.preparedTitle,"",reportSettings.certifiedTitle,"","","",reportSettings.adminTitle,"",reportSettings.approvedTitle]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"]=[{s:{r:0,c:2},e:{r:0,c:5}},{s:{r:0,c:6},e:{r:0,c:10}},{s:{r:2,c:6},e:{r:2,c:10}},{s:{r:4,c:8},e:{r:4,c:9}}];
+  ws["!cols"]=[{wch:5},{wch:30},{wch:14},{wch:14},{wch:23},{wch:16},{wch:20},{wch:20},{wch:14},{wch:14},{wch:16}];
+  styleSheet(ws,[4,5]);
+  return ws;
+}
+function makeSummarySheet(month,rows,scope){
+  const f=summaryRows(rows);
+  const aoa=[[reportSettings.schoolName],["SUMMARY OF CURRENT ABSENCES OF TEACHERS WITHOUT PAY"],[`FOR THE MONTH OF ${monthText(month)}`],[scope==="head"?"SCHOOL HEAD":""],[],[],
+    ["STATION","EMPLOYEE NO.","NAME","INCLUSIVE DATE/S","TOTAL DAYS","HOURS","MINUTES","REMARKS"]];
+  f.forEach(r=>{const e=empForRecord(r);aoa.push([e.stationCode||reportSettings.station,e.employeeNo||r.employeeNo,r.employeeName||r.name,noneIfBlank(r.underDates||r.absenceDates||r.leave),r.underDays||"",r.underHours||"",r.underMins||"",payRemark(r)]);});
+  aoa.push(["*** nothing follows ***"],[],["","Prepared by:","","","Noted:"],["",reportSettings.preparedBy,"","","",reportSettings.certifiedBy],["",reportSettings.preparedTitle,"","","",reportSettings.certifiedTitle]);
+  const ws=XLSX.utils.aoa_to_sheet(aoa);
+  ws["!merges"]=[0,1,2,3].map(r=>({s:{r,c:0},e:{r,c:7}}));
+  const nf=7+f.length; ws["!merges"].push({s:{r:nf,c:0},e:{r:nf,c:7}});
+  ws["!cols"]=[{wch:10},{wch:14},{wch:30},{wch:24},{wch:12},{wch:10},{wch:10},{wch:18}];
+  styleSheet(ws,[6]);
+  return ws;
+}
+async function exportRequiredReports(month){
+  const allSnap=await getDocs(query(dtrCol,where("month","==",month)));
+  const all=allSnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>safe(a.employeeName||a.name).localeCompare(safe(b.employeeName||b.name)));
+  const regular=all.filter(r=>recordInScope(r,"regular")), head=all.filter(r=>recordInScope(r,"head"));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,makeForm7Sheet(month,regular,"regular"),"Form7-Personnel");
+  XLSX.utils.book_append_sheet(wb,makeForm7Sheet(month,head,"head"),"Form7-School Head");
+  XLSX.utils.book_append_sheet(wb,makeMrauSheet(month,regular,"regular"),"HRMO6-Personnel");
+  XLSX.utils.book_append_sheet(wb,makeMrauSheet(month,head,"head"),"HRMO6-School Head");
+  XLSX.utils.book_append_sheet(wb,makeSummarySheet(month,regular,"regular"),"Summary-Personnel");
+  XLSX.utils.book_append_sheet(wb,makeSummarySheet(month,head,"head"),"Summary-School Head");
+  XLSX.writeFile(wb,`DTR-Required-Reports-${month}.xlsx`);
 }
 
 /* LEAVE */
@@ -804,6 +1244,7 @@ function exportJson(rows,name){
 $("exportEmployeesBtn").onclick=()=>exportJson(employees.map(e=>({
  "Employee No.":e.employeeNo,"Name":fullName(e),"Position":e.position,"Personnel Type":e.employeeType,
  "Employment Status":e.employmentStatus,"Plantilla Item":e.plantillaItem,"Salary Grade":e.salaryGrade,"Step":e.step,
+ "Basic Salary":e.basicSalary,"PERA/ACA":e.pera,"Station Code":e.stationCode,
  "School/Office":e.schoolOffice,"Date Hired":e.dateHired,"Email":e.email,"Mobile":e.mobile,"Status":e.status||"Active"
 })),"HR-Employee-Masterlist");
 $("exportLeaveBtn").onclick=()=>exportJson(leaves.map(x=>({"Employee":x.employeeName,"Leave Type":x.leaveType,"From":x.from,"To":x.to,"Days":x.days,"Date Filed":x.dateFiled,"Status":x.status,"Remarks":x.remarks})),"HR-Leave-Register");
