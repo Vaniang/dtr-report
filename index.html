@@ -169,15 +169,23 @@ body.sidebar-hidden #content{margin-left:0}
     <section id="view-employees" class="view">
       <div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
         <div><h4 class="mb-1">Employee Masterlist</h4><div class="small-muted">Central employee database used by all HR modules</div></div>
-        <div class="d-flex flex-wrap gap-2">
+        <div class="d-flex flex-wrap gap-2 align-items-center">
           <input type="file" id="employeeExcel" class="form-control form-control-sm" accept=".xlsx,.xls,.xlsm" style="max-width:230px">
-          <button class="btn btn-outline-success btn-sm" id="importEmployeesBtn"><i class="bi bi-file-earmark-excel"></i> Import Excel</button>
+          <button class="btn btn-outline-success btn-sm" id="importEmployeesBtn"><i class="bi bi-file-earmark-excel"></i> Smart Import / Update</button>
           <button class="btn btn-primary btn-sm" id="addEmployeeBtn"><i class="bi bi-person-plus"></i> Add Employee</button>
+          <div class="vr"></div>
+          <span class="badge text-bg-light border text-dark" id="selectedEmployeeCount">0 selected</span>
+          <button class="btn btn-outline-danger btn-sm" id="deleteSelectedEmployeesBtn" disabled><i class="bi bi-trash3 me-1"></i> Delete Selected</button>
+          <button class="btn btn-danger btn-sm" id="deleteAllEmployeesBtn"><i class="bi bi-trash3-fill me-1"></i> Delete All</button>
         </div>
       </div>
 
       <div class="card shadow-sm">
         <div class="card-body">
+          <div class="alert alert-light border py-2 small mb-3">
+            <i class="bi bi-file-earmark-spreadsheet me-1 text-success"></i>
+            <strong>Smart Excel Import:</strong> recognized HR fields are filtered automatically. Existing employees are updated by Employee No. or name; blank Excel cells do not erase existing Firebase data.
+          </div>
           <div class="row g-2 mb-3">
             <div class="col-md-5"><input id="employeeSearch" class="form-control" placeholder="Search employee, position, school/office..."></div>
             <div class="col-md-3">
@@ -196,7 +204,7 @@ body.sidebar-hidden #content{margin-left:0}
           <div class="table-responsive">
             <table class="table table-hover align-middle">
               <thead class="table-light">
-                <tr><th>#</th><th>Employee</th><th>Employee No.</th><th>Position</th><th>Type</th><th>Employment</th><th>School/Office</th><th>Status</th><th class="text-end">Action</th></tr>
+                <tr><th class="text-center" style="width:36px"><input type="checkbox" class="form-check-input" id="selectAllEmployees" title="Select all visible employees"></th><th>#</th><th>Employee</th><th>Employee No.</th><th>Position</th><th>Type</th><th>Employment</th><th>School/Office</th><th>Status</th><th class="text-end">Action</th></tr>
               </thead>
               <tbody id="employeeBody"></tbody>
             </table>
@@ -211,9 +219,14 @@ body.sidebar-hidden #content{margin-left:0}
         <div><h4 class="mb-1">DTR / Attendance</h4><div class="small-muted">Monthly travel, leave, tardiness and undertime encoding</div></div>
         <div class="d-flex flex-wrap gap-2">
           <input type="month" id="dtrMonth" class="form-control form-control-sm" style="width:165px">
+          <button class="btn btn-outline-secondary btn-sm" id="attendanceSettingsBtn"><i class="bi bi-clock-fill"></i> Teaching Schedule</button>
           <button class="btn btn-primary btn-sm" id="loadEmployeesMonthBtn"><i class="bi bi-people-fill"></i> Load Employees</button>
           <button class="btn btn-outline-danger btn-sm" id="resetMonthBtn"><i class="bi bi-trash"></i> Reset Month</button>
         </div>
+      </div>
+      <div class="alert alert-light border py-2 small mb-3">
+        <i class="bi bi-info-circle-fill text-primary me-1"></i>
+        <strong>Attendance rule:</strong> classroom teaching personnel may use the school-approved fixed schedule saved under Teaching Schedule. Non-teaching personnel and the School Head remain <strong>WITH PAY</strong> for tardiness/undertime, with the CSC equivalent charged to <strong>Vacation Leave</strong>.
       </div>
       <div class="card shadow-sm">
         <div class="card-body p-0">
@@ -246,21 +259,22 @@ body.sidebar-hidden #content{margin-left:0}
           <h4 class="mb-1">Consolidated DTR Reports</h4>
           <div class="small-muted">Required monthly reports based on the uploaded DTR reporting templates</div>
         </div>
-        <button class="btn btn-outline-primary btn-sm" id="reportSettingsBtn">
-          <i class="bi bi-gear-fill me-1"></i> Report Settings / Signatories
-        </button>
+        <div class="d-flex gap-2 flex-wrap">
+          <button class="btn btn-outline-success btn-sm" id="leaveLedgerSetupBtn"><i class="bi bi-journal-check me-1"></i> Leave Ledger / Credits</button>
+          <button class="btn btn-outline-primary btn-sm" id="reportSettingsBtn"><i class="bi bi-gear-fill me-1"></i> Report Settings / Signatories</button>
+        </div>
       </div>
 
       <div class="alert alert-info py-2 small">
         <strong>Available required reports:</strong> Form 7 – Monthly Payroll Worksheet & Report of Service;
-        HRMO Form No. 6 – Monthly Report of Absences and Undertimes; and Summary of Current Absences Without Pay.
-        Separate report scope is available for regular personnel and the School Head.
+        HRMO Form No. 6 – Monthly Report of Absences and Undertimes; Summary of Current Absences Without Pay; and Employee's Leave Card / Leave Ledger.
+        The leave ledger uses the verified starting balance, approved leave records, monthly VL/SL accrual for eligible personnel, and DTR deductions.
       </div>
 
       <div class="card shadow-sm"><div class="card-body p-0"><div class="table-responsive">
         <table class="table table-hover mb-0">
           <thead class="table-light">
-            <tr><th>Month</th><th>Last Saved</th><th>Regular Personnel Reports</th><th>School Head Reports</th><th class="text-end">Excel</th></tr>
+            <tr><th>Month</th><th>Last Saved</th><th>Regular Personnel Reports</th><th>School Head Reports</th><th>Leave Ledger</th><th class="text-end">Excel</th></tr>
           </thead>
           <tbody id="savedReportsBody"></tbody>
         </table>
@@ -275,7 +289,7 @@ body.sidebar-hidden #content{margin-left:0}
       </div>
       <div class="card shadow-sm"><div class="card-body">
         <div class="table-responsive"><table class="table table-hover">
-          <thead class="table-light"><tr><th>Employee</th><th>Leave Type</th><th>Inclusive Dates</th><th>Days</th><th>Date Filed</th><th>Status</th><th>Remarks</th><th class="text-end">Action</th></tr></thead>
+          <thead class="table-light"><tr><th>Employee</th><th>Leave Type</th><th>Inclusive Dates</th><th>Days</th><th>Date Filed</th><th>Status</th><th>Charge</th><th>Remarks</th><th class="text-end">Action</th></tr></thead>
           <tbody id="leaveBody"></tbody>
         </table></div>
       </div></div>
@@ -346,6 +360,7 @@ body.sidebar-hidden #content{margin-left:0}
 <div class="col-md-3"><label class="form-label">Position</label><input id="empPosition" class="form-control"></div>
 <div class="col-md-3"><label class="form-label">Personnel Type</label><select id="empType" class="form-select"><option>Teaching</option><option>Non-Teaching</option></select></div>
 <div class="col-md-3"><label class="form-label">Employment Status</label><select id="empEmployment" class="form-select"><option>Permanent</option><option>Provisional</option><option>Substitute</option><option>Contractual</option><option>COS</option><option>JO</option><option>Others</option></select></div>
+<div class="col-md-3"><label class="form-label">Leave Basis</label><select id="empLeaveBasis" class="form-select"><option value="AUTO">AUTO by position/type</option><option value="VSC">Teacher — VSC / Service Credits</option><option value="VL_SL">VL / SL — Non-Teaching / School Head</option></select></div>
 <div class="col-md-3"><label class="form-label">Plantilla Item</label><input id="empPlantilla" class="form-control"></div>
 <div class="col-md-2"><label class="form-label">Salary Grade</label><input id="empSG" class="form-control"></div>
 <div class="col-md-2"><label class="form-label">Step</label><input id="empStep" class="form-control"></div>
@@ -389,6 +404,21 @@ body.sidebar-hidden #content{margin-left:0}
   </div>
 </div>
 
+<div class="border rounded p-3 mb-3" id="fixedScheduleAttendanceBlock">
+  <div class="d-flex justify-content-between align-items-center mb-2">
+    <div><div class="fw-bold"><i class="bi bi-calendar-week me-1"></i> Teaching Fixed-Schedule Attendance</div><div class="small-muted" id="activeScheduleText">7:30 AM / 1:00 PM / 4:30 PM</div></div>
+    <button type="button" class="btn btn-sm btn-outline-primary" id="addAttendanceRowBtn"><i class="bi bi-plus-lg"></i> Add Day</button>
+  </div>
+  <div class="table-responsive"><table class="table table-sm table-bordered align-middle mb-2"><thead class="table-light"><tr><th>Date</th><th>AM Time In</th><th>PM Time In</th><th>Time Out</th><th>AM Late</th><th>PM Late</th><th>Undertime</th><th>Equivalent</th><th></th></tr></thead><tbody id="attendanceEntriesBody"></tbody></table></div>
+  <div class="row g-2">
+    <div class="col-md-3"><div class="p-2 bg-light rounded"><div class="small text-muted">Late Instances</div><div class="fw-bold" id="attendanceLateInstances">0</div></div></div>
+    <div class="col-md-3"><div class="p-2 bg-light rounded"><div class="small text-muted">Late Minutes</div><div class="fw-bold" id="attendanceLateMinutes">0</div></div></div>
+    <div class="col-md-3"><div class="p-2 bg-light rounded"><div class="small text-muted">Undertime Minutes</div><div class="fw-bold" id="attendanceUnderMinutes">0</div></div></div>
+    <div class="col-md-3"><div class="p-2 bg-light rounded"><div class="small text-muted">CSC Equivalent</div><div class="fw-bold text-danger" id="attendanceEquivalent">0.000</div></div></div>
+  </div>
+  <div class="alert alert-warning py-2 small mt-2 mb-0" id="attendancePayrollNotice"></div>
+</div>
+
 <div class="border rounded p-3 mb-3">
   <div class="fw-bold mb-2"><i class="bi bi-stopwatch me-1"></i> Existing Tardiness Monitoring</div>
   <div class="row g-3">
@@ -426,6 +456,7 @@ body.sidebar-hidden #content{margin-left:0}
 <div class="row g-2"><div class="col-6"><label class="form-label">From</label><input type="date" id="leaveFrom" class="form-control"></div><div class="col-6"><label class="form-label">To</label><input type="date" id="leaveTo" class="form-control"></div></div>
 <div class="row g-2 mt-1"><div class="col-6"><label class="form-label">No. of Days</label><input type="number" step="0.5" id="leaveDays" class="form-control"></div><div class="col-6"><label class="form-label">Date Filed</label><input type="date" id="leaveFiled" class="form-control"></div></div>
 <div class="mt-2"><label class="form-label">Status</label><select id="leaveStatus" class="form-select"><option>Pending</option><option>Approved</option><option>Disapproved</option><option>Cancelled</option></select></div>
+<div class="mt-2"><label class="form-label">Charge To</label><select id="leaveChargeSource" class="form-select"><option value="AUTO">AUTO — based on leave basis/type</option><option value="VL">Vacation Leave</option><option value="SL">Sick Leave</option><option value="VSC">Vacation Service Credit (Teacher)</option><option value="NONE">No VL/SL/VSC deduction</option><option value="LWOP">Leave Without Pay</option></select><div class="small-muted mt-1">AUTO uses VL for vacation/forced leave, SL for sick leave, and VSC for applicable teacher leave.</div></div>
 <div class="mt-2"><label class="form-label">Remarks</label><textarea id="leaveRemarks" class="form-control"></textarea></div>
 </div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveLeaveBtn">Save</button></div>
 </div></div></div>
@@ -465,6 +496,35 @@ body.sidebar-hidden #content{margin-left:0}
 <div class="mt-2"><label class="form-label">Adjectival Rating</label><select id="performanceAdjectival" class="form-select"><option>Outstanding</option><option>Very Satisfactory</option><option>Satisfactory</option><option>Unsatisfactory</option><option>Poor</option></select></div>
 <div class="mt-2"><label class="form-label">Submission</label><select id="performanceSubmission" class="form-select"><option>Submitted</option><option>Pending</option></select></div>
 </div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="savePerformanceBtn">Save</button></div>
+</div></div></div>
+
+<!-- LEAVE CREDIT / EMPLOYEE LEAVE CARD -->
+<div class="modal fade" id="leaveLedgerModal" tabindex="-1"><div class="modal-dialog modal-xl"><div class="modal-content">
+<div class="modal-header bg-success text-white"><h5 class="modal-title"><i class="bi bi-journal-check me-2"></i>Employee Leave Card / Leave Credits</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body">
+  <div class="alert alert-light border small">Enter the verified opening balance from the official Leave Card. For VL/SL personnel, the system accrues monthly credits and deducts approved leave plus DTR tardiness/undertime. Teachers on VSC basis do not receive automatic VL/SL accrual.</div>
+  <div class="row g-3">
+    <div class="col-md-5"><label class="form-label">Employee</label><select id="leaveLedgerEmployee" class="form-select"></select></div>
+    <div class="col-md-3"><label class="form-label">Leave Basis</label><select id="leaveLedgerBasis" class="form-select"><option value="AUTO">AUTO by employee profile</option><option value="VL_SL">VL / SL</option><option value="VSC">Teacher VSC</option></select></div>
+    <div class="col-md-4"><label class="form-label">Start Month</label><input type="month" id="leaveLedgerStartMonth" class="form-control"><div class="small-muted">Opening balances are balances at the beginning of this month.</div></div>
+    <div class="col-md-4"><label class="form-label">Opening Vacation Leave</label><input type="number" step="0.001" id="leaveLedgerVL" class="form-control" placeholder="0.000"></div>
+    <div class="col-md-4"><label class="form-label">Opening Sick Leave</label><input type="number" step="0.001" id="leaveLedgerSL" class="form-control" placeholder="0.000"></div>
+    <div class="col-md-4"><label class="form-label">Opening VSC / Service Credits</label><input type="number" step="0.001" id="leaveLedgerVSC" class="form-control" placeholder="0.000"></div>
+    <div class="col-md-4"><label class="form-label">Generate Through</label><input type="month" id="leaveLedgerThroughMonth" class="form-control"></div>
+    <div class="col-md-8 d-flex align-items-end gap-2 flex-wrap"><button class="btn btn-success" id="saveLeaveCreditProfileBtn"><i class="bi bi-floppy-fill me-1"></i> Save Starting Credits</button><button class="btn btn-outline-dark" id="previewLeaveLedgerBtn"><i class="bi bi-eye-fill me-1"></i> Preview</button><button class="btn btn-outline-primary" id="printLeaveLedgerBtn"><i class="bi bi-printer-fill me-1"></i> Print</button><button class="btn btn-outline-success" id="exportLeaveLedgerBtn"><i class="bi bi-file-earmark-excel me-1"></i> Excel</button></div>
+  </div><hr><div id="leaveLedgerPreview" class="table-responsive"></div>
+</div></div></div></div>
+
+<!-- TEACHING ATTENDANCE SCHEDULE SETTINGS -->
+<div class="modal fade" id="attendanceSettingsModal" tabindex="-1"><div class="modal-dialog modal-lg"><div class="modal-content">
+<div class="modal-header bg-dark text-white"><h5 class="modal-title"><i class="bi bi-clock-history me-2"></i>Teaching Attendance Schedule</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+<div class="modal-body"><div class="alert alert-info small">Enter the school-approved fixed teaching schedule. The defaults below are editable.</div><div class="row g-3">
+<div class="col-md-4"><label class="form-label">Morning Time In</label><input type="time" id="asMorningIn" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">Afternoon Time In</label><input type="time" id="asAfternoonIn" class="form-control"></div>
+<div class="col-md-4"><label class="form-label">End of Duty</label><input type="time" id="asDutyEnd" class="form-control"></div>
+<div class="col-md-6"><label class="form-label">Teaching Treatment</label><select id="asTeacherPayroll" class="form-select"><option value="WITHOUT PAY">WITHOUT PAY / Salary Deduction</option><option value="FOR HR VALIDATION">For HR Validation</option><option value="NO AUTOMATIC DEDUCTION">No Automatic Deduction</option></select></div>
+<div class="col-md-6"><label class="form-label">Policy / School Reference</label><input id="asReference" class="form-control" placeholder="School class program / memorandum"></div>
+</div></div><div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button><button class="btn btn-primary" id="saveAttendanceSettingsBtn">Save Schedule</button></div>
 </div></div></div>
 
 <!-- DTR REPORT SETTINGS -->
@@ -529,7 +589,12 @@ const leaveCol = collection(db,"leave_records");
 const files201Col = collection(db,"files_201");
 const trainingCol = collection(db,"training_records");
 const performanceCol = collection(db,"performance_records");
+const leaveCreditProfilesCol = collection(db,"leave_credit_profiles");
 const dtrReportSettingsDoc = doc(db,"system_settings","dtr_report_settings");
+const attendanceSettingsDoc = doc(db,"system_settings","attendance_schedule");
+
+const DEFAULT_ATTENDANCE_SETTINGS = {morningIn:"07:30",afternoonIn:"13:00",dutyEnd:"16:30",teacherPayrollTreatment:"WITHOUT PAY",reference:"School-approved class schedule / class program"};
+let attendanceSettings={...DEFAULT_ATTENDANCE_SETTINGS};
 
 const DEFAULT_REPORT_SETTINGS = {
   schoolName:"DR. MANUEL T. CASES SR. NATIONAL HIGH SCHOOL",
@@ -548,7 +613,8 @@ const DEFAULT_REPORT_SETTINGS = {
 };
 let reportSettings={...DEFAULT_REPORT_SETTINGS};
 
-let employees=[], dtrData=[], leaves=[], files201=[], trainings=[], performances=[], chart=null;
+let employees=[], dtrData=[], leaves=[], files201=[], trainings=[], performances=[], leaveCreditProfiles=[], chart=null;
+let selectedEmployeeIds=new Set();
 let dtrUnsub=null;
 
 const $ = id => document.getElementById(id);
@@ -629,6 +695,29 @@ const fullName = e => {
 
 const activeEmployees = () => employees.filter(e => (e.status || "Active") === "Active");
 
+function isSchoolHeadEmployee(e){
+  const pos=safe(e?.position).toUpperCase();
+  return /PRINCIPAL|SCHOOL HEAD/.test(pos);
+}
+function suggestedLeaveBasis(e){
+  const explicit=safe(e?.leaveBasis).toUpperCase();
+  if(explicit==="VSC"||explicit==="VL_SL")return explicit;
+  if(isSchoolHeadEmployee(e))return "VL_SL";
+  if(safe(e?.employeeType).toLowerCase()==="non-teaching")return "VL_SL";
+  return "VSC";
+}
+function isClassroomTeachingEmployee(e){ return suggestedLeaveBasis(e)==="VSC"; }
+function normalizedEmployeeKeyName(name){return safe(name).toUpperCase().replace(/\./g,"").replace(/,/g," ").replace(/\s+/g," ").trim();}
+
+const CSC_MINUTE_FRACTIONS=[0,.002,.004,.006,.008,.010,.012,.015,.017,.019,.021,.023,.025,.027,.029,.031,.033,.035,.037,.040,.042,.044,.046,.048,.050,.052,.054,.056,.058,.060,.062,.065,.067,.069,.071,.073,.075,.077,.079,.081,.083,.085,.087,.090,.092,.094,.096,.098,.100,.102,.104,.106,.108,.110,.112,.115,.117,.119,.121,.123,.125];
+function cscFractionFromMinutes(totalMinutes){const mins=Math.max(0,Math.round(Number(totalMinutes)||0));const h=Math.floor(mins/60),r=mins%60;return (h*.125)+(CSC_MINUTE_FRACTIONS[r]||0);}
+function timeToMinutes(v){if(!v||!/^\d{2}:\d{2}$/.test(v))return null;const [h,m]=v.split(":").map(Number);return h*60+m;}
+function positiveMinuteDifference(actual,scheduled){const a=timeToMinutes(actual),s=timeToMinutes(scheduled);return a===null||s===null?0:Math.max(0,a-s);}
+function positiveEarlyOutDifference(actualEnd,scheduledEnd){const a=timeToMinutes(actualEnd),s=timeToMinutes(scheduledEnd);return a===null||s===null?0:Math.max(0,s-a);}
+function formatClock(v){const mins=timeToMinutes(v);if(mins===null)return "";let h=Math.floor(mins/60),m=mins%60;const suffix=h>=12?"PM":"AM";h=h%12||12;return `${h}:${String(m).padStart(2,"0")} ${suffix}`;}
+function round3(n){return Math.round((Number(n)||0)*1000)/1000;}
+
+
 function showView(name){
   document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
   $("view-"+name).classList.add("active");
@@ -645,36 +734,31 @@ function modal(id){ return bootstrap.Modal.getOrCreateInstance($(id)); }
 
 function fillEmployeeSelects(){
   const options = activeEmployees().sort((a,b)=>fullName(a).localeCompare(fullName(b))).map(e=>`<option value="${e.id}">${fullName(e)}</option>`).join("");
-  ["leaveEmployee","trainingEmployee","performanceEmployee"].forEach(id=>$(id).innerHTML=options);
+  ["leaveEmployee","trainingEmployee","performanceEmployee","leaveLedgerEmployee"].forEach(id=>$(id).innerHTML=options);
 }
 
-function renderEmployees(){
+function getFilteredEmployees(){
   const term=$("employeeSearch").value.toLowerCase().trim();
   const type=$("employeeTypeFilter").value;
   const status=$("employeeStatusFilter").value;
-  const rows=employees.filter(e=>{
-    const hay=[fullName(e),e.employeeNo,e.position,e.schoolOffice].join(" ").toLowerCase();
-    return (!term||hay.includes(term)) && (!type||e.employeeType===type) && (!status||(e.status||"Active")===status);
+  return employees.filter(e=>{
+    const hay=[fullName(e),e.employeeNo,e.position,e.schoolOffice,e.employeeType,e.employmentStatus].join(" ").toLowerCase();
+    return (!term||hay.includes(term))&&(!type||e.employeeType===type)&&(!status||(e.status||"Active")===status);
   }).sort((a,b)=>fullName(a).localeCompare(fullName(b)));
-
-  $("employeeBody").innerHTML = rows.length ? rows.map((e,i)=>`
-    <tr>
-      <td>${i+1}</td>
-      <td class="fw-semibold">${fullName(e)}</td>
-      <td>${safe(e.employeeNo)}</td>
-      <td>${safe(e.position)}</td>
-      <td>${safe(e.employeeType)}</td>
-      <td>${safe(e.employmentStatus)}</td>
-      <td>${safe(e.schoolOffice)}</td>
-      <td><span class="badge ${((e.status||"Active")==="Active")?"text-bg-success":"text-bg-secondary"}">${safe(e.status||"Active")}</span></td>
-      <td class="text-end">
-        <button class="btn btn-sm btn-outline-primary me-1 edit-emp" data-id="${e.id}"><i class="bi bi-pencil"></i></button>
-        <button class="btn btn-sm btn-outline-secondary deactivate-emp" data-id="${e.id}"><i class="bi bi-person-dash"></i></button>
-      </td>
-    </tr>`).join("") : `<tr><td colspan="9" class="text-center text-muted py-4">No employee records found.</td></tr>`;
-
+}
+function updateEmployeeSelectionUi(){
+  const valid=new Set(employees.map(e=>e.id));selectedEmployeeIds=new Set([...selectedEmployeeIds].filter(id=>valid.has(id)));
+  $("selectedEmployeeCount").textContent=`${selectedEmployeeIds.size} selected`;$("deleteSelectedEmployeesBtn").disabled=selectedEmployeeIds.size===0;
+  const visible=getFilteredEmployees(),all=visible.length&&visible.every(e=>selectedEmployeeIds.has(e.id)),some=visible.some(e=>selectedEmployeeIds.has(e.id));
+  $("selectAllEmployees").checked=!!all;$("selectAllEmployees").indeterminate=!all&&some;
+}
+function renderEmployees(){
+  const rows=getFilteredEmployees();
+  $("employeeBody").innerHTML=rows.length?rows.map((e,i)=>`<tr><td class="text-center"><input type="checkbox" class="form-check-input employee-select" data-id="${e.id}" ${selectedEmployeeIds.has(e.id)?"checked":""}></td><td>${i+1}</td><td class="fw-semibold">${htmlEsc(fullName(e))}</td><td>${htmlEsc(e.employeeNo)}</td><td>${htmlEsc(e.position)}</td><td>${htmlEsc(e.employeeType)}</td><td>${htmlEsc(e.employmentStatus)}</td><td>${htmlEsc(e.schoolOffice)}</td><td><span class="badge ${((e.status||"Active")==="Active")?"text-bg-success":"text-bg-secondary"}">${htmlEsc(e.status||"Active")}</span></td><td class="text-end" style="white-space:nowrap"><button class="btn btn-sm btn-outline-primary me-1 edit-emp" data-id="${e.id}" title="Edit"><i class="bi bi-pencil"></i></button><button class="btn btn-sm btn-outline-secondary me-1 deactivate-emp" data-id="${e.id}" title="Set inactive"><i class="bi bi-person-dash"></i></button><button class="btn btn-sm btn-outline-danger delete-one-emp" data-id="${e.id}" title="Delete"><i class="bi bi-trash"></i></button></td></tr>`).join(""):`<tr><td colspan="10" class="text-center text-muted py-4">No employee records found.</td></tr>`;
+  document.querySelectorAll(".employee-select").forEach(c=>c.onchange=()=>{c.checked?selectedEmployeeIds.add(c.dataset.id):selectedEmployeeIds.delete(c.dataset.id);updateEmployeeSelectionUi();});
   document.querySelectorAll(".edit-emp").forEach(b=>b.onclick=()=>openEmployee(b.dataset.id));
   document.querySelectorAll(".deactivate-emp").forEach(b=>b.onclick=()=>deactivateEmployee(b.dataset.id));
+  document.querySelectorAll(".delete-one-emp").forEach(b=>b.onclick=()=>deleteEmployeesFromMaster([b.dataset.id]));updateEmployeeSelectionUi();
 }
 
 function updateDashboard(){
@@ -698,11 +782,18 @@ onSnapshot(employeesCol,s=>{
   renderEmployees(); fillEmployeeSelects(); render201(); updateDashboard();
 },err=>{console.error(err);$("liveBadge").textContent="Firestore error";$("liveBadge").className="badge text-bg-danger";});
 
+onSnapshot(leaveCreditProfilesCol,s=>{leaveCreditProfiles=s.docs.map(d=>({id:d.id,...d.data()}));});
+
 ["employeeSearch","employeeTypeFilter","employeeStatusFilter"].forEach(id=>$(id).addEventListener("input",renderEmployees));
+$("selectAllEmployees").onchange=e=>{getFilteredEmployees().forEach(emp=>e.target.checked?selectedEmployeeIds.add(emp.id):selectedEmployeeIds.delete(emp.id));renderEmployees();};
+async function deleteEmployeeMasterDocs(ids){for(let i=0;i<ids.length;i+=400){const b=writeBatch(db);ids.slice(i,i+400).forEach(id=>b.delete(doc(employeesCol,id)));await b.commit();}}
+async function deleteEmployeesFromMaster(ids){const unique=[...new Set(ids)].filter(Boolean);if(!unique.length)return;if(!confirm(`Delete ${unique.length} employee profile(s) from the Masterlist? Historical DTR/Leave/Training/Performance records will be preserved.`))return;await deleteEmployeeMasterDocs(unique);unique.forEach(id=>selectedEmployeeIds.delete(id));}
+$("deleteSelectedEmployeesBtn").onclick=()=>deleteEmployeesFromMaster([...selectedEmployeeIds]);
+$("deleteAllEmployeesBtn").onclick=async()=>{if(!employees.length)return alert("Masterlist is empty.");if(prompt(`Delete ALL ${employees.length} employee profiles? Historical records will be preserved. Type DELETE ALL to continue:`)!=="DELETE ALL")return;await deleteEmployeeMasterDocs(employees.map(e=>e.id));selectedEmployeeIds.clear();};
 
 function clearEmployeeForm(){
   ["empId","empNo","empLast","empFirst","empMiddle","empPosition","empPlantilla","empSG","empStep","empBasicSalary","empPera","empStation","empOffice","empHired","empEmail","empMobile"].forEach(id=>$(id).value="");
-  $("empType").value="Teaching";$("empEmployment").value="Permanent";$("empStatus").value="Active";
+  $("empType").value="Teaching";$("empEmployment").value="Permanent";$("empLeaveBasis").value="AUTO";$("empStatus").value="Active";
 }
 $("addEmployeeBtn").onclick=()=>{clearEmployeeForm();modal("employeeModal").show();};
 
@@ -730,6 +821,7 @@ function openEmployee(id){
   $("empPosition").value=safe(e.position);
   $("empType").value=e.employeeType||"Teaching";
   $("empEmployment").value=e.employmentStatus||"Permanent";
+  $("empLeaveBasis").value=e.leaveBasis||"AUTO";
   $("empPlantilla").value=safe(e.plantillaItem);
   $("empSG").value=safe(e.salaryGrade);
   $("empStep").value=safe(e.step);
@@ -759,7 +851,7 @@ $("saveEmployeeBtn").onclick=async()=>{
     fullName:normalizedFullName,
     // Keep `name` synchronized for compatibility with older DTR records/functions.
     name:normalizedFullName,
-    position:$("empPosition").value.trim(),employeeType:$("empType").value,employmentStatus:$("empEmployment").value,
+    position:$("empPosition").value.trim(),employeeType:$("empType").value,employmentStatus:$("empEmployment").value,leaveBasis:$("empLeaveBasis").value,
     plantillaItem:$("empPlantilla").value.trim(),salaryGrade:$("empSG").value.trim(),step:$("empStep").value.trim(),
     basicSalary:$("empBasicSalary").value,pera:$("empPera").value,stationCode:$("empStation").value.trim(),
     schoolOffice:$("empOffice").value.trim(),dateHired:$("empHired").value,email:$("empEmail").value.trim(),
@@ -777,53 +869,17 @@ async function deactivateEmployee(id){
   await updateDoc(doc(employeesCol,id),{status:"Inactive",updatedAt:serverTimestamp()});
 }
 
-$("importEmployeesBtn").onclick=()=>{
-  const file=$("employeeExcel").files[0]; if(!file)return alert("Choose an Excel file first.");
-  const reader=new FileReader();
-  reader.onload=async ev=>{
-    try{
-      const wb=XLSX.read(ev.target.result,{type:"array"});
-      const data=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:""});
-      if(!data.length)return alert("No rows found.");
-      const norm=o=>Object.fromEntries(Object.entries(o).map(([k,v])=>[k.trim().toLowerCase(),v]));
-      const batchItems=[];
-      for(const raw of data){
-        const r=norm(raw);
-        const complete=safe(r["name of employee"]||r["employee name"]||r["name"]).trim();
-        const last=safe(r["last name"]||r["lastname"]).trim();
-        const first=safe(r["first name"]||r["firstname"]).trim();
-        if(!complete&&!last&&!first)continue;
-        let ln=last,fn=first,mn=safe(r["middle name"]||r["middlename"]).trim();
-        if(complete&&!ln&&!fn){
-          if(complete.includes(",")){const p=complete.split(",");ln=p[0].trim();fn=(p[1]||"").trim();}
-          else {const p=complete.split(/\s+/);fn=p.shift()||"";ln=p.pop()||"";mn=p.join(" ");}
-        }
-        batchItems.push({
-          employeeNo:safe(r["employee no."]||r["employee no"]||r["employee number"]),
-          lastName:ln.toUpperCase(),firstName:fn.toUpperCase(),middleName:cleanMiddleInitial(mn),middleInitial:cleanMiddleInitial(mn),
-          fullName:`${ln.toUpperCase()}${ln&&fn?", ":""}${fn.toUpperCase()}${cleanMiddleInitial(mn)?" "+cleanMiddleInitial(mn):""}`.trim(),
-          name:`${ln.toUpperCase()}${ln&&fn?", ":""}${fn.toUpperCase()}${cleanMiddleInitial(mn)?" "+cleanMiddleInitial(mn):""}`.trim(),
-          position:safe(r["position"]||r["designation"]),
-          employeeType:safe(r["personnel type"]||r["employee type"]||""),
-          employmentStatus:safe(r["employment status"]||r["appointment status"]||""),
-          basicSalary:safe(r["basic salary"]||r["salary"]),
-          pera:safe(r["pera/aca"]||r["pera"]||r["aca"]),
-          stationCode:safe(r["station code"]||r["station"]),
-          schoolOffice:safe(r["school/office"]||r["school office"]||r["office"]||r["school"]),
-          status:"Active",createdAt:serverTimestamp(),updatedAt:serverTimestamp()
-        });
-      }
-      for(let i=0;i<batchItems.length;i+=400){
-        const b=writeBatch(db);
-        batchItems.slice(i,i+400).forEach(x=>b.set(doc(employeesCol),x));
-        await b.commit();
-      }
-      $("employeeExcel").value="";
-      alert(`Imported ${batchItems.length} employee records.`);
-    }catch(e){console.error(e);alert("Import failed: "+e.message);}
-  };
-  reader.readAsArrayBuffer(file);
-};
+function normalizeExcelHeader(v){return safe(v).trim().toLowerCase().replace(/[\n\r]+/g," ").replace(/[._/\\()-]+/g," ").replace(/\s+/g," ").trim();}
+const EMPLOYEE_HEADER_ALIASES={employeeNo:["employee no","employee number","employee id","emp no"],fullName:["name of employee","employee name","name","full name","complete name"],lastName:["last name","lastname","surname"],firstName:["first name","firstname","given name"],middleName:["middle name","middlename","middle initial","mi","m i"],position:["position","position title","designation"],employeeType:["personnel type","employee type","classification","teaching non teaching"],employmentStatus:["employment status","appointment status","status of appointment","appointment"],leaveBasis:["leave basis","leave system"],plantillaItem:["plantilla item","plantilla item no","item no","item number"],salaryGrade:["salary grade","sg"],step:["step","salary step"],basicSalary:["basic salary","monthly salary","salary"],pera:["pera aca","pera","aca","personal economic relief allowance"],stationCode:["station code","station"],schoolOffice:["school office","school","office","place of assignment","work station"],dateHired:["date hired","date of hiring","hiring date","date of appointment"],email:["email","email address","official email"],mobile:["mobile","mobile no","mobile number","contact number","phone"],status:["status","employee status","personnel status"]};
+function employeeHeaderField(h){h=normalizeExcelHeader(h);for(const [f,a] of Object.entries(EMPLOYEE_HEADER_ALIASES))if(a.includes(h))return f;return null;}
+function findEmployeeHeaderRow(rows){let best={row:-1,score:0,map:{}};for(let r=0;r<Math.min(rows.length,40);r++){const map={};let score=0;(rows[r]||[]).forEach((cell,c)=>{const f=employeeHeaderField(cell);if(f&&map[f]===undefined){map[f]=c;score++;}});if(map.fullName!==undefined||(map.firstName!==undefined&&map.lastName!==undefined))score+=3;if(score>best.score)best={row:r,score,map};}return best.score>=4?best:null;}
+const excelCell=(row,col)=>col===undefined||col===null?"":(row?.[col]??"");
+function normalizeDateForStorage(v){if(v===null||v===undefined||v==="")return "";if(v instanceof Date&&!isNaN(v))return v.toISOString().slice(0,10);const s=safe(v).trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))return s;const d=new Date(s);return !isNaN(d)?d.toISOString().slice(0,10):s;}
+function nonBlankPayload(o){const out={};for(const [k,v] of Object.entries(o))if(v!==undefined&&v!==null&&safe(v).trim()!=="")out[k]=v;return out;}
+function normalizePersonnelType(v){const s=safe(v).trim(),u=s.toUpperCase();if(!s)return "";if(u.includes("NON")&&u.includes("TEACH"))return "Non-Teaching";if(u.includes("TEACH"))return "Teaching";return s;}
+function normalizeLeaveBasis(v){const u=safe(v).trim().toUpperCase();if(/VSC|SERVICE CREDIT|TEACHER/.test(u))return "VSC";if(/VL|SL|VACATION|SICK/.test(u))return "VL_SL";return u?"AUTO":"";}
+function buildEmployeeImportRecord(row,map){const complete=safe(excelCell(row,map.fullName)).trim();let ln=safe(excelCell(row,map.lastName)).trim(),fn=safe(excelCell(row,map.firstName)).trim(),mn=safe(excelCell(row,map.middleName)).trim();if(complete&&(!ln||!fn)){const p=parseEmployeeName(complete);if(!ln)ln=p.lastName;if(!fn)fn=p.firstName;if(!mn)mn=p.middleInitial;}if(!ln&&!fn&&!complete)return null;const mi=cleanMiddleInitial(mn),display=(ln||fn)?`${ln.toUpperCase()}${ln&&fn?", ":""}${fn.toUpperCase()}${mi?" "+mi:""}`.trim():complete.toUpperCase();return nonBlankPayload({employeeNo:safe(excelCell(row,map.employeeNo)).trim(),lastName:ln?ln.toUpperCase():"",firstName:fn?fn.toUpperCase():"",middleName:mi,middleInitial:mi,fullName:display,name:display,position:safe(excelCell(row,map.position)).trim(),employeeType:normalizePersonnelType(excelCell(row,map.employeeType)),employmentStatus:safe(excelCell(row,map.employmentStatus)).trim(),leaveBasis:normalizeLeaveBasis(excelCell(row,map.leaveBasis)),plantillaItem:safe(excelCell(row,map.plantillaItem)).trim(),salaryGrade:safe(excelCell(row,map.salaryGrade)).trim(),step:safe(excelCell(row,map.step)).trim(),basicSalary:safe(excelCell(row,map.basicSalary)).trim(),pera:safe(excelCell(row,map.pera)).trim(),stationCode:safe(excelCell(row,map.stationCode)).trim(),schoolOffice:safe(excelCell(row,map.schoolOffice)).trim(),dateHired:normalizeDateForStorage(excelCell(row,map.dateHired)),email:safe(excelCell(row,map.email)).trim(),mobile:safe(excelCell(row,map.mobile)).trim(),status:safe(excelCell(row,map.status)).trim()});}
+$("importEmployeesBtn").onclick=()=>{const file=$("employeeExcel").files[0];if(!file)return alert("Choose an Excel file first.");const reader=new FileReader();reader.onload=async ev=>{try{const wb=XLSX.read(ev.target.result,{type:"array",cellDates:true});let chosen=null;for(const sheetName of wb.SheetNames){const rows=XLSX.utils.sheet_to_json(wb.Sheets[sheetName],{header:1,defval:"",raw:false});const header=findEmployeeHeaderRow(rows);if(header&&(!chosen||header.score>chosen.header.score))chosen={sheetName,rows,header};}if(!chosen)return alert("No recognizable employee table found. Include Name/Employee Name or First Name + Last Name.");const {sheetName,rows,header}=chosen,map=header.map;const byNo=new Map(),byName=new Map();employees.forEach(e=>{const no=safe(e.employeeNo).trim().toUpperCase();if(no)byNo.set(no,e);const nk=normalizedEmployeeKeyName(fullName(e));if(nk)byName.set(nk,e);});let added=0,updated=0,skipped=0;const ops=[],seen=new Set();for(let r=header.row+1;r<rows.length;r++){const rec=buildEmployeeImportRecord(rows[r],map);if(!rec){skipped++;continue;}const no=safe(rec.employeeNo).trim().toUpperCase(),nk=normalizedEmployeeKeyName(rec.fullName||rec.name),key=no?`NO:${no}`:`NAME:${nk}`;if(seen.has(key)){skipped++;continue;}seen.add(key);const ex=(no&&byNo.get(no))||byName.get(nk);if(ex){const patch={...rec,updatedAt:serverTimestamp()};if(map.status===undefined)delete patch.status;if(map.leaveBasis===undefined)delete patch.leaveBasis;ops.push({type:"update",id:ex.id,patch});updated++;}else{ops.push({type:"add",data:{...rec,status:rec.status||"Active",leaveBasis:rec.leaveBasis||"AUTO",createdAt:serverTimestamp(),updatedAt:serverTimestamp()}});added++;}}for(let i=0;i<ops.length;i+=400){const b=writeBatch(db);ops.slice(i,i+400).forEach(op=>op.type==="update"?b.update(doc(employeesCol,op.id),op.patch):b.set(doc(employeesCol),op.data));await b.commit();}$("employeeExcel").value="";alert(`Smart import completed from ${sheetName}. Added: ${added}; Updated: ${updated}; Skipped: ${skipped}.`);}catch(err){console.error(err);alert("Smart import failed: "+err.message);}};reader.readAsArrayBuffer(file);};
 
 /* DTR */
 const now=new Date();
@@ -846,7 +902,7 @@ function renderDtr(){
     <td class="fw-semibold">${safe(r.employeeName||r.name)}</td><td>${safe(r.travel)}</td><td>${safe(r.leave)}</td>
     <td>${safe(r.tardyDays)}</td><td>${safe(r.tardyMins)}</td><td>${safe(r.tardyConv)}</td>
     <td>${safe(r.underDays)}</td><td>${safe(r.underMins)}</td><td>${safe(r.underConv)}</td>
-    <td>${safe(r.totalDays)}</td><td>${safe(r.totalConv)}</td><td>${safe(r.remarks)}</td>
+    <td>${safe(r.totalDays)}</td><td>${safe(r.totalConv)}</td><td>${r.payStatus?`<span class="badge ${r.payStatus==="WITHOUT PAY"?"text-bg-danger":"text-bg-success"}">${htmlEsc(r.payStatus)}</span><br>`:""}${r.leaveChargeType==="VACATION LEAVE"&&r.leaveChargeEquivalent?`<span class="small text-primary fw-semibold">Deduct VL: ${htmlEsc(r.leaveChargeEquivalent)} day</span><br>`:""}${htmlEsc(r.remarks)}</td>
     <td><button class="btn btn-sm btn-outline-primary edit-dtr" data-id="${r.id}"><i class="bi bi-pencil"></i></button></td>
   </tr>`).join(""):`<tr><td colspan="13" class="text-center text-muted py-4">No records. Click Load Employees.</td></tr>`;
   document.querySelectorAll(".edit-dtr").forEach(b=>b.onclick=()=>openDtr(b.dataset.id));
@@ -864,8 +920,8 @@ $("loadEmployeesMonthBtn").onclick=async()=>{
     const b=writeBatch(db);
     missing.slice(i,i+400).forEach(e=>b.set(doc(dtrCol),{
       employeeId:e.id,employeeName:fullName(e),name:fullName(e),month,
-      travel:"",leave:"",tardyDays:"",tardyMins:"",tardyConv:"",
-      underDays:"",underMins:"",underConv:"",totalDays:"",totalConv:"",remarks:""
+      travel:"",leave:"",absenceCount:"",cause:"",vacationLeaveDays:"",sickLeaveDays:"",tardyDays:"",tardyMins:"",tardyConv:"",
+      underCount:"",underDates:"",underDays:"",underHours:"",underMins:"",underConv:"",attendanceEntries:[],attendanceLateInstances:0,attendanceLateMinutes:0,attendanceUnderMinutes:0,attendanceEquivalentDay:"0.000",payStatus:"",leaveChargeType:"",leaveChargeEquivalent:"",divisionAction:"",deduction:"",totalDays:"",totalConv:"",remarks:""
     }));
     await b.commit();
   }
@@ -879,19 +935,16 @@ $("resetMonthBtn").onclick=async()=>{
   }
 };
 
-function recalcDtr(){
-  const tm=+($("dtrTardyMins").value||0);
-  const td=+($("dtrTardyDays").value||0);
-  const ud=+($("dtrUnderDays").value||0);
-  const uh=+($("dtrUnderHours").value||0);
-  const um=+($("dtrUnderMins").value||0);
-  const tc=tm/480;
-  const uc=ud+(uh/8)+(um/480);
-  $("dtrTardyConv").value=tc?tc.toFixed(3):"";
-  $("dtrUnderConv").value=uc?uc.toFixed(3):"";
-  $("dtrTotalDays").value=(td+ud)||"";
-  $("dtrTotalConv").value=(tc+uc)?(tc+uc).toFixed(3):"";
-}
+let workingAttendanceEntries=[];
+function currentDtrEmployee(){const r=dtrData.find(x=>x.id===$("dtrId").value);return r?empForRecord(r):{};}
+function computeAttendanceEntry(entry){const am=positiveMinuteDifference(entry.amIn,attendanceSettings.morningIn),pm=positiveMinuteDifference(entry.pmIn,attendanceSettings.afternoonIn),under=positiveEarlyOutDifference(entry.timeOut,attendanceSettings.dutyEnd),total=am+pm+under;return {...entry,amLateMins:am,pmLateMins:pm,undertimeMins:under,totalDeductibleMins:total,equivalentDay:cscFractionFromMinutes(total)};}
+function attendanceSummary(){const entries=workingAttendanceEntries.map(computeAttendanceEntry);const lateInstances=entries.reduce((n,e)=>n+(e.amLateMins>0?1:0)+(e.pmLateMins>0?1:0),0),lateMins=entries.reduce((n,e)=>n+e.amLateMins+e.pmLateMins,0),underMins=entries.reduce((n,e)=>n+e.undertimeMins,0),totalMins=lateMins+underMins;return {entries,lateInstances,lateMins,underMins,totalMins,equivalentDay:cscFractionFromMinutes(totalMins)};}
+function manualDtrEquivalent(){const t=cscFractionFromMinutes(+( $("dtrTardyMins").value||0)),u=cscFractionFromMinutes((+( $("dtrUnderDays").value||0)*480)+(+( $("dtrUnderHours").value||0)*60)+(+( $("dtrUnderMins").value||0)));return round3(t+u);}
+function effectiveDtrEquivalent(){const emp=currentDtrEmployee();return isClassroomTeachingEmployee(emp)&&workingAttendanceEntries.length?round3(attendanceSummary().equivalentDay):manualDtrEquivalent();}
+function syncAttendanceTotalsToDtrFields(doRecalc=true){const s=attendanceSummary();if(s.entries.length){$("dtrTardyMins").value=s.lateMins||"";$("dtrTardyDays").value=s.lateInstances||"";$("dtrUnderMins").value=s.underMins||"";$("dtrUnderCount").value=s.entries.filter(e=>e.undertimeMins>0).length||"";}if(doRecalc)recalcDtr();}
+function renderAttendanceEntries(){const emp=currentDtrEmployee(),show=isClassroomTeachingEmployee(emp);$("fixedScheduleAttendanceBlock").style.display=show?"block":"none";if(!show)return;$("activeScheduleText").textContent=`Schedule: ${formatClock(attendanceSettings.morningIn)} / ${formatClock(attendanceSettings.afternoonIn)} / ${formatClock(attendanceSettings.dutyEnd)}`;const body=$("attendanceEntriesBody");body.innerHTML=workingAttendanceEntries.length?workingAttendanceEntries.map((raw,i)=>{const e=computeAttendanceEntry(raw);return `<tr><td><input type="date" class="form-control form-control-sm att-date" data-i="${i}" value="${htmlEsc(raw.date)}"></td><td><input type="time" class="form-control form-control-sm att-am" data-i="${i}" value="${htmlEsc(raw.amIn)}"></td><td><input type="time" class="form-control form-control-sm att-pm" data-i="${i}" value="${htmlEsc(raw.pmIn)}"></td><td><input type="time" class="form-control form-control-sm att-out" data-i="${i}" value="${htmlEsc(raw.timeOut)}"></td><td class="${e.amLateMins?"text-danger fw-bold":""}">${e.amLateMins||0} min</td><td class="${e.pmLateMins?"text-danger fw-bold":""}">${e.pmLateMins||0} min</td><td class="${e.undertimeMins?"text-danger fw-bold":""}">${e.undertimeMins||0} min</td><td>${e.equivalentDay.toFixed(3)}</td><td><button class="btn btn-sm btn-outline-danger att-remove" data-i="${i}"><i class="bi bi-x-lg"></i></button></td></tr>`;}).join(""):`<tr><td colspan="9" class="text-center text-muted py-3">No daily attendance entries yet.</td></tr>`;const s=attendanceSummary();$("attendanceLateInstances").textContent=s.lateInstances;$("attendanceLateMinutes").textContent=s.lateMins;$("attendanceUnderMinutes").textContent=s.underMins;$("attendanceEquivalent").textContent=s.equivalentDay.toFixed(3);$("attendancePayrollNotice").textContent=attendanceSettings.teacherPayrollTreatment==="WITHOUT PAY"?`Teaching personnel: verified tardiness/undertime is flagged WITHOUT PAY. Equivalent: ${s.equivalentDay.toFixed(3)} day.`:`Teaching personnel: ${attendanceSettings.teacherPayrollTreatment}. Equivalent: ${s.equivalentDay.toFixed(3)} day.`;document.querySelectorAll(".att-date").forEach(el=>el.onchange=()=>{workingAttendanceEntries[+el.dataset.i].date=el.value;renderAttendanceEntries();});document.querySelectorAll(".att-am").forEach(el=>el.onchange=()=>{workingAttendanceEntries[+el.dataset.i].amIn=el.value;renderAttendanceEntries();syncAttendanceTotalsToDtrFields();});document.querySelectorAll(".att-pm").forEach(el=>el.onchange=()=>{workingAttendanceEntries[+el.dataset.i].pmIn=el.value;renderAttendanceEntries();syncAttendanceTotalsToDtrFields();});document.querySelectorAll(".att-out").forEach(el=>el.onchange=()=>{workingAttendanceEntries[+el.dataset.i].timeOut=el.value;renderAttendanceEntries();syncAttendanceTotalsToDtrFields();});document.querySelectorAll(".att-remove").forEach(b=>b.onclick=()=>{workingAttendanceEntries.splice(+b.dataset.i,1);renderAttendanceEntries();syncAttendanceTotalsToDtrFields();});}
+$("addAttendanceRowBtn").onclick=()=>{const m=$("dtrMonth").value;workingAttendanceEntries.push({date:m?`${m}-01`:"",amIn:"",pmIn:"",timeOut:""});renderAttendanceEntries();};
+function recalcDtr(){const tm=+($("dtrTardyMins").value||0),td=+($("dtrTardyDays").value||0),ud=+($("dtrUnderDays").value||0),uh=+($("dtrUnderHours").value||0),um=+($("dtrUnderMins").value||0),tc=cscFractionFromMinutes(tm),uc=cscFractionFromMinutes((ud*480)+(uh*60)+um);$("dtrTardyConv").value=tc?tc.toFixed(3):"";$("dtrUnderConv").value=uc?uc.toFixed(3):"";$("dtrTotalDays").value=(td+ud)||"";$("dtrTotalConv").value=(tc+uc)?(tc+uc).toFixed(3):"";}
 document.querySelectorAll(".calc").forEach(x=>x.oninput=recalcDtr);
 
 function openDtr(id){
@@ -914,7 +967,8 @@ function openDtr(id){
   $("dtrDivisionAction").value=safe(r.divisionAction);
   $("dtrDeduction").value=safe(r.deduction);
   $("dtrRemarks").value=safe(r.remarks);
-  recalcDtr();
+  workingAttendanceEntries=Array.isArray(r.attendanceEntries)?r.attendanceEntries.map(x=>({date:safe(x.date),amIn:safe(x.amIn),pmIn:safe(x.pmIn),timeOut:safe(x.timeOut)})):[];
+  renderAttendanceEntries();recalcDtr();
   modal("dtrModal").show();
 }
 $("saveDtrBtn").onclick=async()=>{
@@ -936,7 +990,10 @@ $("saveDtrBtn").onclick=async()=>{
     underHours:$("dtrUnderHours").value,
     underMins:$("dtrUnderMins").value,
     underConv:$("dtrUnderConv").value,
-    payStatus:$("dtrPayStatus").value,
+    attendanceEntries:attendanceSummary().entries,attendanceLateInstances:attendanceSummary().lateInstances,attendanceLateMinutes:attendanceSummary().lateMins,attendanceUnderMinutes:attendanceSummary().underMins,attendanceEquivalentDay:attendanceSummary().equivalentDay.toFixed(3),
+    payStatus:(()=>{const e=currentDtrEmployee(),eq=effectiveDtrEquivalent();if(isClassroomTeachingEmployee(e)&&eq>0&&attendanceSettings.teacherPayrollTreatment==="WITHOUT PAY")return "WITHOUT PAY";if(!isClassroomTeachingEmployee(e)&&eq>0)return "WITH PAY";return $("dtrPayStatus").value;})(),
+    leaveChargeType:(()=>{const e=currentDtrEmployee();return !isClassroomTeachingEmployee(e)&&effectiveDtrEquivalent()>0?"VACATION LEAVE":"";})(),
+    leaveChargeEquivalent:(()=>{const e=currentDtrEmployee();return !isClassroomTeachingEmployee(e)&&effectiveDtrEquivalent()>0?effectiveDtrEquivalent().toFixed(3):"";})(),
     divisionAction:$("dtrDivisionAction").value,
     deduction:$("dtrDeduction").value,
     totalDays:$("dtrTotalDays").value,
@@ -958,13 +1015,19 @@ $("saveDtrReportBtn").onclick=async()=>{
 function updateAttendanceChart(){
   const ctx=$("attendanceChart"); if(!ctx)return;
   if(chart)chart.destroy();
-  const underTotalMins=x=>(+(x.underDays||0)*480)+(+(x.underHours||0)*60)+ +(x.underMins||0);
-  const f=dtrData.filter(x=>+(x.tardyMins||0)>0||underTotalMins(x)>0).slice(0,20);
+  const underTotalMins=x=>x.attendanceUnderMinutes!==undefined?+(x.attendanceUnderMinutes||0):(+(x.underDays||0)*480)+(+(x.underHours||0)*60)+ +(x.underMins||0);
+  const lateTotalMins=x=>x.attendanceLateMinutes!==undefined?+(x.attendanceLateMinutes||0):+(x.tardyMins||0);
+  const f=dtrData.filter(x=>lateTotalMins(x)>0||underTotalMins(x)>0).slice(0,20);
   chart=new Chart(ctx,{type:"bar",data:{labels:f.map(x=>(x.employeeName||x.name||"").slice(0,18)),datasets:[
-    {label:"Tardiness (mins)",data:f.map(x=>+(x.tardyMins||0))},
+    {label:"Tardiness (mins)",data:f.map(x=>lateTotalMins(x))},
     {label:"Undertime (mins)",data:f.map(x=>underTotalMins(x))}
   ]},options:{responsive:true,scales:{y:{beginAtZero:true}}}});
 }
+
+async function loadAttendanceSettings(){try{const s=await getDoc(attendanceSettingsDoc);if(s.exists())attendanceSettings={...DEFAULT_ATTENDANCE_SETTINGS,...s.data()};}catch(e){console.warn("Attendance settings could not be loaded",e);}}
+await loadAttendanceSettings();
+$("attendanceSettingsBtn").onclick=()=>{$("asMorningIn").value=attendanceSettings.morningIn||"07:30";$("asAfternoonIn").value=attendanceSettings.afternoonIn||"13:00";$("asDutyEnd").value=attendanceSettings.dutyEnd||"16:30";$("asTeacherPayroll").value=attendanceSettings.teacherPayrollTreatment||"WITHOUT PAY";$("asReference").value=attendanceSettings.reference||"";modal("attendanceSettingsModal").show();};
+$("saveAttendanceSettingsBtn").onclick=async()=>{attendanceSettings={morningIn:$("asMorningIn").value||"07:30",afternoonIn:$("asAfternoonIn").value||"13:00",dutyEnd:$("asDutyEnd").value||"16:30",teacherPayrollTreatment:$("asTeacherPayroll").value,reference:$("asReference").value.trim()};await setDoc(attendanceSettingsDoc,{...attendanceSettings,updatedAt:serverTimestamp()},{merge:true});modal("attendanceSettingsModal").hide();alert("Teaching schedule saved.");};
 
 async function loadReportSettings(){
   try{
@@ -1020,9 +1083,7 @@ function isSchoolHeadRecord(r){
 }
 function recordInScope(r,scope){ return scope==="head" ? isSchoolHeadRecord(r) : !isSchoolHeadRecord(r); }
 function noneIfBlank(v){ const s=safe(v).trim(); return s || "NONE"; }
-function payRemark(r){
-  return safe(r.payStatus).trim() || (/^(WITH|WITHOUT) PAY$/i.test(safe(r.remarks).trim()) ? safe(r.remarks).trim().toUpperCase() : safe(r.remarks).trim());
-}
+function payRemark(r){if(safe(r.payStatus).toUpperCase()==="WITH PAY"&&safe(r.leaveChargeType).toUpperCase()==="VACATION LEAVE"){const eq=safe(r.leaveChargeEquivalent).trim();return `WITH PAY - DEDUCT VL${eq?` (${eq} day)`:""}`;}return safe(r.payStatus).trim()||(/^(WITH|WITHOUT) PAY$/i.test(safe(r.remarks).trim())?safe(r.remarks).trim().toUpperCase():safe(r.remarks).trim());}
 function undertimeDisplay(r){
   const parts=[];
   const d=+(r.underDays||0),h=+(r.underHours||0),m=+(r.underMins||0);
@@ -1187,10 +1248,12 @@ async function loadSavedReports(){
         <button class="btn btn-sm btn-outline-warning req-print" data-type="mrau" data-scope="head" data-month="${r.month}">HRMO Form 6</button>
         <button class="btn btn-sm btn-outline-danger req-print" data-type="summary" data-scope="head" data-month="${r.month}">Without Pay</button>
       </td>
+      <td><button class="btn btn-sm btn-outline-success open-leave-ledger" data-month="${r.month}"><i class="bi bi-journal-check me-1"></i> Employee Leave Card</button></td>
       <td class="text-end"><button class="btn btn-sm btn-success export-required" data-month="${r.month}"><i class="bi bi-file-earmark-excel me-1"></i> All Required Reports</button></td>
     </tr>`;
-  }).join(""):`<tr><td colspan="5" class="text-center text-muted py-4">No saved DTR reports.</td></tr>`;
+  }).join(""):`<tr><td colspan="6" class="text-center text-muted py-4">No saved DTR reports.</td></tr>`;
   document.querySelectorAll(".req-print").forEach(b=>b.onclick=()=>printRequiredReport(b.dataset.type,b.dataset.month,b.dataset.scope));
+  document.querySelectorAll(".open-leave-ledger").forEach(b=>b.onclick=()=>openLeaveLedgerModal(b.dataset.month));
   document.querySelectorAll(".export-required").forEach(b=>b.onclick=()=>exportRequiredReports(b.dataset.month));
 }
 
@@ -1272,20 +1335,39 @@ async function exportRequiredReports(month){
   XLSX.writeFile(wb,`DTR-Required-Reports-${month}.xlsx`);
 }
 
+/* LEAVE CREDIT / EMPLOYEE LEAVE CARD */
+function leaveProfileForEmployee(employeeId){return leaveCreditProfiles.find(p=>p.employeeId===employeeId||p.id===employeeId)||null;}
+function effectiveLeaveBasis(emp,profile){const p=safe(profile?.leaveBasis||"AUTO").toUpperCase();return p==="VSC"||p==="VL_SL"?p:suggestedLeaveBasis(emp);}
+function monthRangeInclusive(start,end){if(!start||!end||start>end)return [];const [sy,sm]=start.split("-").map(Number),[ey,em]=end.split("-").map(Number),out=[];let y=sy,m=sm;while(y<ey||(y===ey&&m<=em)){out.push(`${y}-${String(m).padStart(2,"0")}`);m++;if(m===13){m=1;y++;}}return out;}
+function leaveRecordMonth(l){const d=safe(l.from||l.dateFiled);return /^\d{4}-\d{2}/.test(d)?d.slice(0,7):"";}
+function isStatutoryNoCreditDeduction(type){return /MATERNITY|PATERNITY|SOLO PARENT|SPECIAL PRIVILEGE|WELLNESS|STUDY/.test(safe(type).toUpperCase());}
+function resolveLeaveCharge(leave,emp,basis){const explicit=safe(leave.chargeSource||"AUTO").toUpperCase();if(explicit!=="AUTO")return explicit;const t=safe(leave.leaveType).toUpperCase();if(isStatutoryNoCreditDeduction(t))return "NONE";if(basis==="VSC")return /SICK|VACATION|PERSONAL/.test(t)?"VSC":"NONE";if(/SICK/.test(t))return "SL";if(/VACATION|FORCED|MANDATORY/.test(t))return "VL";return "NONE";}
+async function getEmployeeDtrRows(emp){const out=new Map();try{const a=await getDocs(query(dtrCol,where("employeeId","==",emp.id)));a.docs.forEach(d=>out.set(d.id,{id:d.id,...d.data()}));}catch(_){ }try{const b=await getDocs(query(dtrCol,where("name","==",fullName(emp))));b.docs.forEach(d=>out.set(d.id,{id:d.id,...d.data()}));}catch(_){ }return [...out.values()];}
+async function computeEmployeeLeaveLedger(emp,profile,targetMonth){const basis=effectiveLeaveBasis(emp,profile),startMonth=safe(profile?.startMonth||targetMonth),months=monthRangeInclusive(startMonth,targetMonth);if(!months.length)throw new Error("Start Month must be on or before Generate Through.");let vl=Number(profile?.openingVL)||0,sl=Number(profile?.openingSL)||0,vsc=Number(profile?.openingVSC)||0;const dtrRows=await getEmployeeDtrRows(emp),rows=[];for(const month of months){const monthLeaves=leaves.filter(l=>l.employeeId===emp.id&&safe(l.status).toUpperCase()==="APPROVED"&&leaveRecordMonth(l)===month),dtr=dtrRows.find(r=>r.month===month);let vlLeave=0,slLeave=0,vscUsed=0,lwop=0;const particulars=[];monthLeaves.forEach(l=>{const days=Number(l.days)||0,charge=resolveLeaveCharge(l,emp,basis);if(charge==="VL")vlLeave+=days;else if(charge==="SL")slLeave+=days;else if(charge==="VSC")vscUsed+=days;else if(charge==="LWOP")lwop+=days;particulars.push(`${l.leaveType}: ${days} day${days===1?"":"s"} (${charge})`);});if(basis==="VL_SL"&&monthLeaves.length===0&&dtr){vlLeave=Number(dtr.vacationLeaveDays)||0;slLeave=Number(dtr.sickLeaveDays)||0;if(vlLeave)particulars.push(`VL from DTR: ${vlLeave}`);if(slLeave)particulars.push(`SL from DTR: ${slLeave}`);}const tardyEq=dtr?.attendanceLateMinutes!==undefined?cscFractionFromMinutes(Number(dtr.attendanceLateMinutes)||0):cscFractionFromMinutes(Number(dtr?.tardyMins)||0),underMinutes=dtr?.attendanceUnderMinutes!==undefined?Number(dtr.attendanceUnderMinutes)||0:((Number(dtr?.underDays)||0)*480)+((Number(dtr?.underHours)||0)*60)+(Number(dtr?.underMins)||0),underEq=cscFractionFromMinutes(underMinutes);if(basis==="VL_SL"){const dtrVL=round3(tardyEq+underEq);let earnedVL=1.250,earnedSL=1.250;if(lwop>0){const present=Math.max(0,30-lwop);earnedVL=earnedSL=round3(present*1.25/30);}const totalVL=round3(vlLeave+dtrVL),vlAvailable=round3(vl+earnedVL);let excessVL=0;if(totalVL>vlAvailable){excessVL=round3(totalVL-vlAvailable);vl=0;}else vl=round3(vlAvailable-totalVL);const slAvailable=round3(sl+earnedSL);let excessSL=0;if(slLeave>slAvailable){excessSL=round3(slLeave-slAvailable);sl=0;}else sl=round3(slAvailable-slLeave);lwop=round3(lwop+excessVL+excessSL);rows.push({month,basis,particulars:particulars.join("; ")||"Monthly leave credit",tardiness:tardyEq,undertime:underEq,vlEarned:earnedVL,vlUsed:round3(totalVL),vlBalance:vl,slEarned:earnedSL,slUsed:round3(slLeave),slBalance:sl,vscEarned:0,vscUsed:0,vscBalance:vsc,lwop,remarks:dtr?.remarks||""});}else{let excess=0;if(vscUsed>vsc){excess=round3(vscUsed-vsc);vsc=0;}else vsc=round3(vsc-vscUsed);lwop=round3(lwop+excess);rows.push({month,basis,particulars:particulars.join("; ")||"Teacher VSC basis — no automatic VL/SL accrual",tardiness:tardyEq,undertime:underEq,vlEarned:0,vlUsed:0,vlBalance:vl,slEarned:0,slUsed:0,slBalance:sl,vscEarned:0,vscUsed:round3(vscUsed),vscBalance:vsc,lwop,remarks:dtr?.remarks||""});}}return {basis,rows,ending:{vl:round3(vl),sl:round3(sl),vsc:round3(vsc)}};}
+function leaveLedgerHtml(emp,profile,result,targetMonth){const head=`<div class="report-head"><div>Republic of the Philippines</div><h3 style="font-size:15px">DEPARTMENT OF EDUCATION</h3><div>${htmlEsc(reportSettings.region)}</div><div>${htmlEsc(reportSettings.division)}</div><h3 style="font-size:15px;margin-top:8px">EMPLOYEE'S LEAVE CARD</h3></div><table style="margin-bottom:8px"><tr><td style="width:15%"><strong>NAME</strong></td><td style="width:35%">${htmlEsc(fullName(emp))}</td><td style="width:15%"><strong>EMPLOYEE NO.</strong></td><td>${htmlEsc(emp.employeeNo)}</td></tr><tr><td><strong>POSITION</strong></td><td>${htmlEsc(emp.position)}</td><td><strong>DATE HIRED</strong></td><td>${htmlEsc(emp.dateHired)}</td></tr><tr><td><strong>LEAVE BASIS</strong></td><td>${result.basis==="VL_SL"?"VACATION / SICK LEAVE":"TEACHER VSC"}</td><td><strong>THROUGH</strong></td><td>${monthText(targetMonth)}</td></tr></table>`;if(result.basis==="VL_SL"){const body=result.rows.map(r=>`<tr><td>${monthText(r.month)}</td><td style="text-align:left">${htmlEsc(r.particulars)}</td><td>${r.tardiness?r.tardiness.toFixed(3):""}</td><td>${r.undertime?r.undertime.toFixed(3):""}</td><td>${r.vlEarned.toFixed(3)}</td><td>${r.vlUsed?r.vlUsed.toFixed(3):""}</td><td>${r.vlBalance.toFixed(3)}</td><td>${r.slEarned.toFixed(3)}</td><td>${r.slUsed?r.slUsed.toFixed(3):""}</td><td>${r.slBalance.toFixed(3)}</td><td>${r.lwop?r.lwop.toFixed(3):""}</td><td style="text-align:left">${htmlEsc(r.remarks)}</td></tr>`).join("");return `<div class="official-report">${head}<table><thead><tr><th rowspan="2">PERIOD</th><th rowspan="2">PARTICULARS</th><th rowspan="2">TARDINESS</th><th rowspan="2">UNDERTIME</th><th colspan="3">VACATION LEAVE</th><th colspan="3">SICK LEAVE</th><th rowspan="2">ABS. W/O PAY</th><th rowspan="2">REMARKS</th></tr><tr><th>EARNED</th><th>CHARGED</th><th>BALANCE</th><th>EARNED</th><th>CHARGED</th><th>BALANCE</th></tr></thead><tbody>${body}</tbody></table><div class="signatures" style="grid-template-columns:1fr 1fr">${sigBlock("Prepared/Updated by:",reportSettings.preparedBy,reportSettings.preparedTitle)}${sigBlock("Certified Correct:",reportSettings.certifiedBy,reportSettings.certifiedTitle)}</div></div>`;}const body=result.rows.map(r=>`<tr><td>${monthText(r.month)}</td><td style="text-align:left">${htmlEsc(r.particulars)}</td><td>${r.vscEarned?r.vscEarned.toFixed(3):""}</td><td>${r.vscUsed?r.vscUsed.toFixed(3):""}</td><td>${r.vscBalance.toFixed(3)}</td><td>${r.lwop?r.lwop.toFixed(3):""}</td><td>${r.tardiness?r.tardiness.toFixed(3):""}</td><td>${r.undertime?r.undertime.toFixed(3):""}</td><td style="text-align:left">${htmlEsc(r.remarks)}</td></tr>`).join("");return `<div class="official-report">${head}<table><thead><tr><th>PERIOD</th><th>PARTICULARS / LEAVE</th><th>VSC EARNED</th><th>VSC USED</th><th>VSC BALANCE</th><th>ABS. W/O PAY</th><th>TARDINESS EQ.</th><th>UNDERTIME EQ.</th><th>REMARKS</th></tr></thead><tbody>${body}</tbody></table><div class="signatures" style="grid-template-columns:1fr 1fr">${sigBlock("Prepared/Updated by:",reportSettings.preparedBy,reportSettings.preparedTitle)}${sigBlock("Certified Correct:",reportSettings.certifiedBy,reportSettings.certifiedTitle)}</div></div>`;}
+function populateLeaveLedgerProfile(emp){const p=leaveProfileForEmployee(emp.id);$("leaveLedgerBasis").value=p?.leaveBasis||emp.leaveBasis||"AUTO";$("leaveLedgerStartMonth").value=p?.startMonth||$("dtrMonth").value;$("leaveLedgerVL").value=safe(p?.openingVL);$("leaveLedgerSL").value=safe(p?.openingSL);$("leaveLedgerVSC").value=safe(p?.openingVSC);}
+const selectedLedgerEmployee=()=>employees.find(e=>e.id===$("leaveLedgerEmployee").value);
+async function refreshLeaveLedgerPreview(){const emp=selectedLedgerEmployee();if(!emp)throw new Error("Select an employee.");const profile={employeeId:emp.id,leaveBasis:$("leaveLedgerBasis").value,startMonth:$("leaveLedgerStartMonth").value,openingVL:Number($("leaveLedgerVL").value)||0,openingSL:Number($("leaveLedgerSL").value)||0,openingVSC:Number($("leaveLedgerVSC").value)||0},through=$("leaveLedgerThroughMonth").value;if(!through)throw new Error("Select Generate Through month.");const result=await computeEmployeeLeaveLedger(emp,profile,through);$("leaveLedgerPreview").innerHTML=leaveLedgerHtml(emp,profile,result,through);return {emp,profile,result,through};}
+function openLeaveLedgerModal(month=""){const opts=activeEmployees().sort((a,b)=>fullName(a).localeCompare(fullName(b))).map(e=>`<option value="${e.id}">${htmlEsc(fullName(e))}</option>`).join("");$("leaveLedgerEmployee").innerHTML=opts;const emp=selectedLedgerEmployee();if(emp)populateLeaveLedgerProfile(emp);$("leaveLedgerThroughMonth").value=month||$("dtrMonth").value;$("leaveLedgerPreview").innerHTML='<div class="text-muted small py-3">Save the verified opening credits, then Preview.</div>';modal("leaveLedgerModal").show();}
+$("leaveLedgerSetupBtn").onclick=()=>openLeaveLedgerModal($("dtrMonth").value);$("leaveLedgerEmployee").onchange=()=>{const e=selectedLedgerEmployee();if(e)populateLeaveLedgerProfile(e);$("leaveLedgerPreview").innerHTML="";};
+$("saveLeaveCreditProfileBtn").onclick=async()=>{const emp=selectedLedgerEmployee();if(!emp)return alert("Select an employee.");if(!$("leaveLedgerStartMonth").value)return alert("Select Start Month.");await setDoc(doc(leaveCreditProfilesCol,emp.id),{employeeId:emp.id,employeeName:fullName(emp),leaveBasis:$("leaveLedgerBasis").value,startMonth:$("leaveLedgerStartMonth").value,openingVL:Number($("leaveLedgerVL").value)||0,openingSL:Number($("leaveLedgerSL").value)||0,openingVSC:Number($("leaveLedgerVSC").value)||0,updatedAt:serverTimestamp()},{merge:true});alert("Starting leave credits saved.");};
+$("previewLeaveLedgerBtn").onclick=async()=>{try{await refreshLeaveLedgerPreview();}catch(e){alert(e.message);}};$("printLeaveLedgerBtn").onclick=async()=>{try{const d=await refreshLeaveLedgerPreview();$("printContent").innerHTML=leaveLedgerHtml(d.emp,d.profile,d.result,d.through);setTimeout(()=>window.print(),100);}catch(e){alert(e.message);}};
+$("exportLeaveLedgerBtn").onclick=async()=>{try{const d=await refreshLeaveLedgerPreview(),rows=d.result.basis==="VL_SL"?d.result.rows.map(r=>({Period:monthText(r.month),Particulars:r.particulars,"Tardiness Eq.":r.tardiness,"Undertime Eq.":r.undertime,"VL Earned":r.vlEarned,"VL Charged":r.vlUsed,"VL Balance":r.vlBalance,"SL Earned":r.slEarned,"SL Charged":r.slUsed,"SL Balance":r.slBalance,"Absence Without Pay":r.lwop,Remarks:r.remarks})):d.result.rows.map(r=>({Period:monthText(r.month),Particulars:r.particulars,"VSC Earned":r.vscEarned,"VSC Used":r.vscUsed,"VSC Balance":r.vscBalance,"Absence Without Pay":r.lwop,"Tardiness Eq.":r.tardiness,"Undertime Eq.":r.undertime,Remarks:r.remarks}));const wb=XLSX.utils.book_new(),ws=XLSX.utils.json_to_sheet(rows);XLSX.utils.book_append_sheet(wb,ws,"Leave Card");XLSX.writeFile(wb,`Leave-Card-${fullName(d.emp).replace(/[^A-Za-z0-9]+/g,"-")}-${d.through}.xlsx`);}catch(e){alert(e.message);}};
+
 /* LEAVE */
 onSnapshot(leaveCol,s=>{leaves=s.docs.map(d=>({id:d.id,...d.data()}));renderLeave();updateDashboard();});
 function renderLeave(){
   $("leaveBody").innerHTML=leaves.length?leaves.sort((a,b)=>safe(b.dateFiled).localeCompare(safe(a.dateFiled))).map(x=>`
   <tr><td>${safe(x.employeeName)}</td><td>${safe(x.leaveType)}</td><td>${safe(x.from)} to ${safe(x.to)}</td><td>${safe(x.days)}</td>
-  <td>${safe(x.dateFiled)}</td><td><span class="badge ${x.status==="Approved"?"text-bg-success":x.status==="Pending"?"text-bg-warning":"text-bg-secondary"}">${safe(x.status)}</span></td>
+  <td>${safe(x.dateFiled)}</td><td><span class="badge ${x.status==="Approved"?"text-bg-success":x.status==="Pending"?"text-bg-warning":"text-bg-secondary"}">${safe(x.status)}</span></td><td>${htmlEsc(x.chargeSource||"AUTO")}</td>
   <td>${safe(x.remarks)}</td><td class="text-end"><button class="btn btn-sm btn-outline-danger del-leave" data-id="${x.id}"><i class="bi bi-trash"></i></button></td></tr>`).join("")
-  :`<tr><td colspan="8" class="text-center text-muted py-4">No leave records.</td></tr>`;
+  :`<tr><td colspan="9" class="text-center text-muted py-4">No leave records.</td></tr>`;
   document.querySelectorAll(".del-leave").forEach(b=>b.onclick=async()=>{if(confirm("Delete this leave record?"))await deleteDoc(doc(leaveCol,b.dataset.id));});
 }
-$("addLeaveBtn").onclick=()=>{["leaveId","leaveFrom","leaveTo","leaveDays","leaveFiled","leaveRemarks"].forEach(id=>$(id).value="");$("leaveStatus").value="Pending";modal("leaveModal").show();};
+$("addLeaveBtn").onclick=()=>{["leaveId","leaveFrom","leaveTo","leaveDays","leaveFiled","leaveRemarks"].forEach(id=>$(id).value="");$("leaveStatus").value="Pending";$("leaveChargeSource").value="AUTO";modal("leaveModal").show();};
 $("saveLeaveBtn").onclick=async()=>{
   const emp=employees.find(e=>e.id===$("leaveEmployee").value);if(!emp)return alert("Select an employee.");
-  await addDoc(leaveCol,{employeeId:emp.id,employeeName:fullName(emp),leaveType:$("leaveType").value,from:$("leaveFrom").value,to:$("leaveTo").value,days:$("leaveDays").value,dateFiled:$("leaveFiled").value,status:$("leaveStatus").value,remarks:$("leaveRemarks").value,createdAt:serverTimestamp()});
+  await addDoc(leaveCol,{employeeId:emp.id,employeeName:fullName(emp),leaveType:$("leaveType").value,from:$("leaveFrom").value,to:$("leaveTo").value,days:$("leaveDays").value,dateFiled:$("leaveFiled").value,status:$("leaveStatus").value,chargeSource:$("leaveChargeSource").value,remarks:$("leaveRemarks").value,createdAt:serverTimestamp()});
   modal("leaveModal").hide();
 };
 
@@ -1349,11 +1431,11 @@ function exportJson(rows,name){
 }
 $("exportEmployeesBtn").onclick=()=>exportJson(employees.map(e=>({
  "Employee No.":e.employeeNo,"Name":fullName(e),"Position":e.position,"Personnel Type":e.employeeType,
- "Employment Status":e.employmentStatus,"Plantilla Item":e.plantillaItem,"Salary Grade":e.salaryGrade,"Step":e.step,
+ "Employment Status":e.employmentStatus,"Leave Basis":e.leaveBasis||"AUTO","Plantilla Item":e.plantillaItem,"Salary Grade":e.salaryGrade,"Step":e.step,
  "Basic Salary":e.basicSalary,"PERA/ACA":e.pera,"Station Code":e.stationCode,
  "School/Office":e.schoolOffice,"Date Hired":e.dateHired,"Email":e.email,"Mobile":e.mobile,"Status":e.status||"Active"
 })),"HR-Employee-Masterlist");
-$("exportLeaveBtn").onclick=()=>exportJson(leaves.map(x=>({"Employee":x.employeeName,"Leave Type":x.leaveType,"From":x.from,"To":x.to,"Days":x.days,"Date Filed":x.dateFiled,"Status":x.status,"Remarks":x.remarks})),"HR-Leave-Register");
+$("exportLeaveBtn").onclick=()=>exportJson(leaves.map(x=>({"Employee":x.employeeName,"Leave Type":x.leaveType,"From":x.from,"To":x.to,"Days":x.days,"Date Filed":x.dateFiled,"Status":x.status,"Charge To":x.chargeSource||"AUTO","Remarks":x.remarks})),"HR-Leave-Register");
 $("exportTrainingBtn").onclick=()=>exportJson(trainings.map(x=>({"Employee":x.employeeName,"Training":x.title,"Provider":x.provider,"From":x.from,"To":x.to,"Hours":x.hours,"Level":x.level,"Certificate":x.certificate})),"HR-Training-Register");
 
 </script>
